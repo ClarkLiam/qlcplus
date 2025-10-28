@@ -85,7 +85,7 @@
     <message>
         <location filename="webaccess.cpp" line="1044"/>
         <source>Widget not supported (yet) for web access</source>
-        <translation>Assistent wird (zurzeit) für Webzugriff nicht unterstützt</translation>
+        <translation>Assistent wird für Webzugriff (zurzeit noch) nicht unterstützt</translation>
     </message>
     <message>
         <location filename="webaccess.cpp" line="1117"/>
@@ -278,7 +278,7 @@
     <message>
         <location filename="webaccessconfiguration.cpp" line="284"/>
         <source>Username and password are required fields.</source>
-        <translation>Benutzername und Passwort sind benötigte Felder.</translation>
+        <translation>Benutzername und Passwort sind erforderliche Felder.</translation>
     </message>
     <message>
         <location filename="webaccessconfiguration.cpp" line="287"/>
