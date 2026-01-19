@@ -67,8 +67,9 @@ set(SRC_FILES
     uimanager.cpp uimanager.h
     videoeditor.cpp videoeditor.h
     videoprovider.cpp videoprovider.h
+    waveformimageprovider.cpp waveformimageprovider.h
     virtualconsole/vcanimation.cpp virtualconsole/vcanimation.h
-    virtualconsole/vcaudiotrigger.cpp virtualconsole/vcaudiotrigger.h
+    virtualconsole/vcaudiotriggers.cpp virtualconsole/vcaudiotriggers.h
     virtualconsole/vcbutton.cpp virtualconsole/vcbutton.h
     virtualconsole/vcclock.cpp virtualconsole/vcclock.h
     virtualconsole/vccuelist.cpp virtualconsole/vccuelist.h
@@ -80,28 +81,36 @@ set(SRC_FILES
     virtualconsole/vcwidget.cpp virtualconsole/vcwidget.h
     virtualconsole/vcxypad.cpp virtualconsole/vcxypad.h
     virtualconsole/vcspeeddial.cpp virtualconsole/vcspeeddial.h
+    virtualconsole/vcspeeddialpreset.cpp virtualconsole/vcspeeddialpreset.h
     virtualconsole/virtualconsole.cpp virtualconsole/virtualconsole.h
 )
 
+# This is most of the Android deployment code
 if(ANDROID)
-    add_library(${module_name} SHARED
-        ${SRC_FILES}
-        ${QM_FILES}
+    qt_add_executable(${module_name} ${SRC_FILES} ${QM_FILES})
+    set_target_properties(${module_name} PROPERTIES
+        QT_ANDROID_PACKAGE_SOURCE_DIR "${ANDROID_PACKAGE_STAGING_DIR}"
+        QT_ANDROID_APP_ICON "@drawable/ic_launcher"
+        QT_ANDROID_PACKAGE_NAME "org.qlcplus"
+        OUTPUT_NAME "QLC+"
     )
-    set_target_properties(
-        ${module_name}
-        PROPERTIES LIBRARY_OUTPUT_NAME qlcplus)
+
+    # Copy overlay resources into build tree
+    file(MAKE_DIRECTORY "${ANDROID_PACKAGE_STAGING_DIR}")
+    file(COPY "${PROJECT_SOURCE_DIR}/platforms/android/" DESTINATION "${ANDROID_PACKAGE_STAGING_DIR}")
+
+    qt_policy(SET QTP0002 NEW)
+    set_property(TARGET ${module_name} APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "$<TARGET_FILE:artnet>")
+    set_property(TARGET ${module_name} APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "$<TARGET_FILE:e131>")
+    set_property(TARGET ${module_name} APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "$<TARGET_FILE:loopback>")
+    set_property(TARGET ${module_name} APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "$<TARGET_FILE:osc>")
+    set_property(TARGET ${module_name} APPEND PROPERTY QT_ANDROID_EXTRA_LIBS "$<TARGET_FILE:os2l>")
 else()
-    add_executable(${module_name} WIN32
-        ${SRC_FILES}
-        ${QM_FILES}
-    )
+    add_executable(${module_name} WIN32 ${SRC_FILES} ${QM_FILES})
 endif()
 
 if(WIN32)
-    target_sources(${module_name} PRIVATE
-        qmlui.rc
-    )
+    target_sources(${module_name} PRIVATE qmlui.rc)
 endif()
 
 target_include_directories(${module_name} PRIVATE
@@ -113,6 +122,7 @@ target_include_directories(${module_name} PRIVATE
     tardis
     virtualconsole
 )
+target_include_directories(${module_name} PUBLIC ${FFTW3_INCLUDE_DIRS})
 
 target_link_libraries(${module_name} PRIVATE
     Qt${QT_MAJOR_VERSION}::3DCore
@@ -167,6 +177,4 @@ else()
     )
 endif()
 
-install(TARGETS ${module_name}
-    DESTINATION ${INSTALLROOT}/${BINDIR}
-)
+install(TARGETS ${module_name} DESTINATION ${INSTALLROOT}/${BINDIR})

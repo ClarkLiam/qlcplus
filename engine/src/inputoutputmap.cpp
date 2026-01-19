@@ -33,6 +33,7 @@
 #include "inputoutputmap.h"
 #include "qlcinputchannel.h"
 #include "qlcinputsource.h"
+#include "audiocapture.h"
 #include "qlcioplugin.h"
 #include "outputpatch.h"
 #include "inputpatch.h"
@@ -1014,26 +1015,42 @@ void InputOutputMap::setBeatGeneratorType(InputOutputMap::BeatGeneratorType type
     if (type == m_beatGeneratorType)
         return;
 
+    if (m_beatGeneratorType == Audio)
+    {
+        m_inputCapture->unregisterBandsNumber(4);
+        disconnect(m_inputCapture, SIGNAL(beatDetected()), this, SLOT(slotProcessBeat()));
+    }
+
     m_beatGeneratorType = type;
     qDebug() << "[InputOutputMap] setting beat type:" << m_beatGeneratorType;
 
     switch (m_beatGeneratorType)
     {
         case Internal:
+        {
             m_doc->masterTimer()->setBeatSourceType(MasterTimer::Internal);
             setBpmNumber(m_doc->masterTimer()->bpmNumber());
+        }
         break;
         case Plugin:
+        {
             m_doc->masterTimer()->setBeatSourceType(MasterTimer::External);
             // reset the current BPM number and detect it from the MIDI beats
             setBpmNumber(0);
             m_beatTime->restart();
+        }
         break;
         case Audio:
+        {
             m_doc->masterTimer()->setBeatSourceType(MasterTimer::External);
             // reset the current BPM number and detect it from the audio input
             setBpmNumber(0);
             m_beatTime->restart();
+            QSharedPointer<AudioCapture> capture(m_doc->audioInputCapture());
+            m_inputCapture = capture.data();
+            connect(m_inputCapture, SIGNAL(beatDetected()), this, SLOT(slotProcessBeat()));
+            m_inputCapture->registerBandsNumber(4);
+        }
         break;
         case Disabled:
         default:
@@ -1095,6 +1112,26 @@ int InputOutputMap::bpmNumber() const
     return m_currentBPM;
 }
 
+void InputOutputMap::slotProcessBeat()
+{
+    // process the timer as first thing, to avoid wasting time
+    // with the operations below
+    qint64 elapsed = m_beatTime->elapsed();
+    m_beatTime->restart();
+
+    int bpm = qRound(60000.0 / (float)elapsed);
+    float currBpmTime = 60000.0 / (float)m_currentBPM;
+    // here we check if the difference between the current BPM duration
+    // and the current time elapsed is within a range of +/-1ms.
+    // If it isn't, then the BPM number has really changed, otherwise
+    // it's just a tiny time drift
+    if (qAbs((float)elapsed - currBpmTime) > 1)
+        setBpmNumber(bpm);
+
+    m_doc->masterTimer()->requestBeat();
+    emit beat();
+}
+
 void InputOutputMap::slotMasterTimerBeat()
 {
     if (m_beatGeneratorType != Internal)
@@ -1113,30 +1150,7 @@ void InputOutputMap::slotPluginBeat(quint32 universe, quint32 channel, uchar val
 
     qDebug() << "Plugin beat:" << channel << m_beatTime->elapsed();
 
-    // process the timer as first thing, to avoid wasting time
-    // with the operations below
-    int elapsed = m_beatTime->elapsed();
-    m_beatTime->restart();
-
-    int bpm = qRound(60000.0 / (float)elapsed);
-    float currBpmTime = 60000.0 / (float)m_currentBPM;
-    // here we check if the difference between the current BPM duration
-    // and the current time elapsed is within a range of +/-1ms.
-    // If it isn't, then the BPM number has really changed, otherwise
-    // it's just a tiny time drift
-    if (qAbs((float)elapsed - currBpmTime) > 1)
-        setBpmNumber(bpm);
-
-    m_doc->masterTimer()->requestBeat();
-    emit beat();
-}
-
-void InputOutputMap::slotAudioSpectrum(double *spectrumBands, int size, double maxMagnitude, quint32 power)
-{
-    Q_UNUSED(spectrumBands)
-    Q_UNUSED(size)
-    Q_UNUSED(maxMagnitude)
-    Q_UNUSED(power)
+    slotProcessBeat();
 }
 
 /*********************************************************************

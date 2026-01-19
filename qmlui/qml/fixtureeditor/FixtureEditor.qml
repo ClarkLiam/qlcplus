@@ -51,7 +51,7 @@ Rectangle
     }
 
     property string dialogTitle
-    property url dialogCurrentFolder: "file://" + fixtureEditor.workingPath
+    property url dialogCurrentFolder: fixtureEditor.workingPath
     property url dialogSelectedFile
     property var dialogNameFilters: [ qsTr("Fixture definition files") + " (*.qxf)", qsTr("All files") + " (*)" ]
     property int dialogFileMode: FileDialog.OpenFile
@@ -59,6 +59,8 @@ Rectangle
 
     function openDialog(opMode)
     {
+        var saveFilename = ""
+
         dialogOpMode = opMode
         switch (dialogOpMode)
         {
@@ -70,13 +72,25 @@ Rectangle
             case App.SaveAsMode:
                 dialogTitle = qsTr("Save definition as...")
                 dialogFileMode = FileDialog.SaveFile
+                saveFilename = editor.editorView.fileName
+                if (saveFilename === "")
+                    saveFilename = editor.editorView.manufacturer.replace(" ", "-") + "-" +
+                                   editor.editorView.model.replace(" ", "-")
             break
         }
 
         if (Qt.platform.os === "linux")
+        {
+            if (saveFilename !== "")
+                customDialog.selectedFile = saveFilename
             customDialog.open()
+        }
         else
+        {
+            if (saveFilename !== "")
+                nativeDialog.selectedFile = saveFilename
             nativeDialog.open()
+        }
     }
 
     function handleAccept()
@@ -87,7 +101,8 @@ Rectangle
         {
             case App.OpenMode:
             {
-                //fixtureEditor.workingPath = dialogCurrentFolder.toString()
+                fixtureEditor.workingPath = dialogCurrentFolder.toString()
+
                 if (fixtureEditor.loadDefinition(dialogSelectedFile) === false)
                 {
                     editor.visible = false
@@ -101,6 +116,7 @@ Rectangle
             case App.SaveAsMode:
             {
                 editor.save(dialogSelectedFile)
+                qlcplus.reloadFixture(dialogSelectedFile)
             }
             break
         }
@@ -111,7 +127,7 @@ Rectangle
         id: nativeDialog
         title: dialogTitle
         fileMode: dialogFileMode
-        currentFolder: dialogCurrentFolder
+        currentFolder: "file:///" + dialogCurrentFolder
         nameFilters: dialogNameFilters
 
         onAccepted:
@@ -126,12 +142,14 @@ Rectangle
     {
         id: customDialog
         title: dialogTitle
+        currentFolder: dialogCurrentFolder
         nameFilters: dialogNameFilters
-        standardButtons: Dialog.Cancel | (dialogOpMode === App.SaveMode ? Dialog.Save : Dialog.Open)
+        standardButtons: Dialog.Cancel |
+            ((dialogOpMode === App.SaveMode | dialogOpMode === App.SaveAsMode) ? Dialog.Save : Dialog.Open)
 
         onAccepted:
         {
-            dialogSelectedFile = selectedFile
+            dialogSelectedFile = currentFolder + folderSeparator() + selectedFile
             dialogCurrentFolder = currentFolder
             handleAccept()
         }
@@ -335,6 +353,7 @@ Rectangle
                         checkable: true
                         autoExclusive: true
                         padding: 5
+                        rightPadding: height * 1.1
 
                         onClicked:
                         {
@@ -342,6 +361,18 @@ Rectangle
                             editor.editorView = modelData.cRef
                             editor.initialize()
                             checked = true
+                        }
+
+                        GenericButton
+                        {
+                            visible: editorsRepeater.count > 1
+                            width: height
+                            height: parent.height * 0.9
+                            anchors.right: parent.right
+                            border.color: UISettings.bgMedium
+                            useFontawesome: true
+                            label: FontAwesome.fa_xmark
+                            onClicked: fixtureEditor.deleteEditor(modelData.id)
                         }
                     }
             } // Repeater

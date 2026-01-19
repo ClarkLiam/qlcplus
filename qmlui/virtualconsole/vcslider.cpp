@@ -36,9 +36,40 @@
 #include "doc.h"
 #include "app.h"
 
+/** ************** XML Tags and Attributes ************** */
+
+#define KXMLQLCVCSliderMode             QStringLiteral("SliderMode")
+#define KXMLQLCVCSliderWidgetStyle      QStringLiteral("WidgetStyle")
+
+#define KXMLQLCVCSliderValueDisplayStyle            QStringLiteral("ValueDisplayStyle")
+#define KXMLQLCVCSliderValueDisplayStyleExact       QStringLiteral("Exact")
+#define KXMLQLCVCSliderValueDisplayStylePercentage  QStringLiteral("Percentage")
+
+#define KXMLQLCVCSliderClickAndGoType       QStringLiteral("ClickAndGoType")
+#define KXMLQLCVCSliderInvertedAppearance   QStringLiteral("InvertedAppearance")
+
+#define KXMLQLCVCSliderLevel            QStringLiteral("Level")
+#define KXMLQLCVCSliderLevelLowLimit    QStringLiteral("LowLimit")
+#define KXMLQLCVCSliderLevelHighLimit   QStringLiteral("HighLimit")
+#define KXMLQLCVCSliderLevelValue       QStringLiteral("Value")
+#define KXMLQLCVCSliderLevelMonitor     QStringLiteral("Monitor")
+#define KXMLQLCVCSliderOverrideReset    QStringLiteral("Reset")
+#define KXMLQLCVCSliderFunctionFlash    QStringLiteral("Flash")
+
+#define KXMLQLCVCSliderChannel          QStringLiteral("Channel")
+#define KXMLQLCVCSliderChannelFixture   QStringLiteral("Fixture")
+
+#define KXMLQLCVCSliderPlayback             QStringLiteral("Playback") // LEGACY
+#define KXMLQLCVCSliderAdjust               QStringLiteral("Adjust")
+#define KXMLQLCVCSliderAdjustAttribute      QStringLiteral("Attribute")
+#define KXMLQLCVCSliderControlledFunction   QStringLiteral("Function")
+
+/** **************** External Control IDs ***************** */
+
 #define INPUT_SLIDER_CONTROL_ID     0
 #define INPUT_SLIDER_RESET_ID       1
 #define INPUT_SLIDER_FLASH_ID       2
+
 
 VCSlider::VCSlider(Doc *doc, QObject *parent)
     : VCWidget(doc, parent)
@@ -935,7 +966,10 @@ void VCSlider::slotControlledFunctionAttributeChanged(int attrIndex, qreal fract
     if (attrIndex != m_controlledAttributeIndex || m_adjustChangeCounter)
         return;
 
-    qreal newValue = qRound(attributeValueToSliderValue(fraction / intensity()));
+    qreal newValue = fraction;
+
+    if (attrIndex == Function::Intensity)
+        newValue = qRound(attributeValueToSliderValue(fraction / intensity()));
 
     qDebug() << "Function attribute" << m_controlledAttributeIndex << "changed" << fraction << "->" << newValue;
 
@@ -990,8 +1024,8 @@ void VCSlider::setControlledAttribute(int attributeIndex)
         newValue = function->getAttributeValue(m_controlledAttributeIndex);
     }
 
-    setRangeLowLimit(m_attributeMinValue);
-    setRangeHighLimit(m_attributeMaxValue);
+    setRangeLowLimit(qMax(m_attributeMinValue, rangeLowLimit()));
+    setRangeHighLimit(qMin(m_attributeMaxValue, rangeHighLimit()));
 
     emit controlledAttributeChanged(attributeIndex);
     emit attributeMinValueChanged();
@@ -1282,12 +1316,14 @@ void VCSlider::writeDMXAdjust(MasterTimer* timer, QList<Universe *> ua)
     if (function == nullptr)
         return;
 
-    qreal fraction = sliderValueToAttributeValue(m_value);
+    qreal fraction = m_value;
 
     qDebug() << "Adjust Function attribute" << m_controlledAttributeIndex << "to" << fraction;
 
     if (m_controlledAttributeIndex == Function::Intensity)
     {
+        fraction = sliderValueToAttributeValue(m_value);
+
         if (m_value == 0)
         {
             if (function->stopped() == false)
@@ -1666,7 +1702,11 @@ bool VCSlider::saveXML(QXmlStreamWriter *doc)
         doc->writeEndElement();
 
         if (adjustFlashEnabled())
-            saveXMLInputControl(doc, INPUT_SLIDER_FLASH_ID, false, KXMLQLCVCSliderFunctionFlash);
+        {
+            doc->writeStartElement(KXMLQLCVCSliderFunctionFlash);
+            saveXMLInputControl(doc, INPUT_SLIDER_FLASH_ID, false);
+            doc->writeEndElement();
+        }
     }
 
     /* End the <Slider> tag */

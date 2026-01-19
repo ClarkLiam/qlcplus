@@ -375,6 +375,11 @@ void FixtureBrowser::updateSearchTree()
     for (QString &manufacturer : mfList) // C++11
     {
         QStringList modelsList = m_doc->fixtureDefCache()->models(manufacturer);
+        if (manufacturer == "Generic")
+        {
+            modelsList << "Generic Dimmer";
+            modelsList << "Generic RGB Panel";
+        }
         modelsList.sort();
 
         for (QString &model : modelsList)
@@ -391,7 +396,7 @@ void FixtureBrowser::updateSearchTree()
     emit searchListChanged();
 }
 
-QLCFixtureDef *FixtureBrowser::fixtureDefinition()
+QLCFixtureDef *FixtureBrowser::fixtureDefinition() const
 {
     return m_doc->fixtureDefCache()->fixtureDef(m_selectedManufacturer, m_selectedModel);
 }

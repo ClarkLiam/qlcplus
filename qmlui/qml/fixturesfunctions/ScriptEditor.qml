@@ -270,7 +270,7 @@ Rectangle
                     selectByMouse: true
 
                     onCursorRectangleChanged: editFlick.ensureVisible(cursorRectangle)
-                    onTextEdited: updateTimer.restart()
+                    onTextChanged: updateTimer.restart()
                 }
 
                 ScrollBar.vertical: CustomScrollBar { }
@@ -310,6 +310,7 @@ Rectangle
         {
             scriptEdit.insert(scriptEdit.cursorPosition, str + "\n")
             scriptEdit.cursorPosition -= 3
+            updateTimer.restart()
             addMethodMenu.close()
         }
 

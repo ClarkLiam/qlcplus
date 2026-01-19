@@ -56,7 +56,7 @@ Popup
     }
 
     property string dialogTitle
-    property url dialogCurrentFolder: "file://" + qlcplus.workingPath
+    property url dialogCurrentFolder: qlcplus.workingPath
     property url dialogSelectedFile
     property var dialogNameFilters: [ qsTr("QLC+ files") + " (*.qxw *.qxf)", qsTr("All files") + " (*)" ]
     property int dialogFileMode: FileDialog.OpenFile
@@ -129,7 +129,7 @@ Popup
         id: nativeDialog
         title: dialogTitle
         fileMode: dialogFileMode
-        currentFolder: dialogCurrentFolder
+        currentFolder: "file:///" + dialogCurrentFolder
         nameFilters: dialogNameFilters
 
         onAccepted:
@@ -144,12 +144,14 @@ Popup
     {
         id: customDialog
         title: dialogTitle
+        currentFolder: dialogCurrentFolder
         nameFilters: dialogNameFilters
-        standardButtons: Dialog.Cancel | (dialogOpMode === App.SaveMode ? Dialog.Save : Dialog.Open)
+        standardButtons: Dialog.Cancel |
+            ((dialogOpMode === App.SaveMode | dialogOpMode === App.SaveAsMode) ? Dialog.Save : Dialog.Open)
 
         onAccepted:
         {
-            dialogSelectedFile = selectedFile
+            dialogSelectedFile = currentFolder + folderSeparator() + selectedFile
             dialogCurrentFolder = currentFolder
             handleAccept()
         }
@@ -193,7 +195,7 @@ Popup
                 else if (action == "#NEW")
                     qlcplus.newWorkspace()
                 else if (action == "#EXIT")
-                    qlcplus.exit()
+                    qlcplus.exit(true)
                 else
                     qlcplus.loadWorkspace(action)
             }
@@ -648,5 +650,4 @@ Popup
         }
     }
 }
-
 

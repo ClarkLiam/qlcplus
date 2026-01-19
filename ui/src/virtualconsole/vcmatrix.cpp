@@ -349,7 +349,7 @@ void VCMatrix::slotSetColor1(QColor color)
     if (matrix->getColor(0) != color)
     {
         matrix->setColor(0, color);
-        emit mtxColor1Changed();
+        emit mtxColorChanged(1);
     }
 }
 
@@ -362,7 +362,7 @@ void VCMatrix::slotSetColor2(QColor color)
     if (matrix->getColor(1) != color)
     {
         matrix->setColor(1, color);
-        emit mtxColor2Changed();
+        emit mtxColorChanged(2);
     }
 }
 
@@ -375,7 +375,7 @@ void VCMatrix::slotSetColor3(QColor color)
     if (matrix->getColor(2) != color)
     {
         matrix->setColor(2, color);
-        emit mtxColor3Changed();
+        emit mtxColorChanged(3);
     }
 }
 
@@ -388,7 +388,7 @@ void VCMatrix::slotSetColor4(QColor color)
     if (matrix->getColor(3) != color)
     {
         matrix->setColor(3, color);
-        emit mtxColor4Changed();
+        emit mtxColorChanged(4);
     }
 }
 
@@ -401,7 +401,7 @@ void VCMatrix::slotSetColor5(QColor color)
     if (matrix->getColor(4) != color)
     {
         matrix->setColor(4, color);
-        emit mtxColor5Changed();
+        emit mtxColorChanged(5);
     }
 }
 
@@ -630,8 +630,10 @@ quint32 VCMatrix::function() const
     return m_matrixID;
 }
 
-void VCMatrix::notifyFunctionStarting(quint32 fid, qreal functionIntensity)
+void VCMatrix::notifyFunctionStarting(quint32 fid, qreal functionIntensity, bool excludeMonitored)
 {
+    Q_UNUSED(excludeMonitored)
+
     if (mode() == Doc::Design)
         return;
 
@@ -1185,7 +1187,7 @@ void VCMatrix::slotCustomControlClicked()
             if (instantChanges() == true)
                 matrix->updateColorDelta();
             btn->setDown(true);
-            emit mtxColor1Changed();
+            emit mtxColorChanged(1);
         }
         else if (control->m_type == VCMatrixControl::Color2)
         {
@@ -1193,47 +1195,47 @@ void VCMatrix::slotCustomControlClicked()
             if (instantChanges() == true)
                 matrix->updateColorDelta();
             btn->setDown(true);
-            emit mtxColor2Changed();
+            emit mtxColorChanged(2);
         }
         else if (control->m_type == VCMatrixControl::Color3)
         {
             matrix->setColor(2, control->m_color);
             btn->setDown(true);
-            emit mtxColor3Changed();
+            emit mtxColorChanged(3);
         }
         else if (control->m_type == VCMatrixControl::Color4)
         {
             matrix->setColor(3, control->m_color);
             btn->setDown(true);
-            emit mtxColor4Changed();
+            emit mtxColorChanged(4);
         }
         else if (control->m_type == VCMatrixControl::Color5)
         {
             matrix->setColor(4, control->m_color);
             btn->setDown(true);
-            emit mtxColor5Changed();
+            emit mtxColorChanged(5);
         }
         else if (control->m_type == VCMatrixControl::Color2Reset)
         {
             matrix->setColor(1, QColor());
             if (instantChanges() == true)
                 matrix->updateColorDelta();
-            emit mtxColor2Changed();
+            emit mtxColorChanged(2);
         }
         else if (control->m_type == VCMatrixControl::Color3Reset)
         {
             matrix->setColor(2, QColor());
-            emit mtxColor3Changed();
+            emit mtxColorChanged(3);
         }
         else if (control->m_type == VCMatrixControl::Color4Reset)
         {
             matrix->setColor(3, QColor());
-            emit mtxColor4Changed();
+            emit mtxColorChanged(4);
         }
         else if (control->m_type == VCMatrixControl::Color5Reset)
         {
             matrix->setColor(4, QColor());
-            emit mtxColor5Changed();
+            emit mtxColorChanged(5);
         }
         else if (control->m_type == VCMatrixControl::Animation)
         {
@@ -1253,6 +1255,7 @@ void VCMatrix::slotCustomControlClicked()
             if (instantChanges() == true)
                 matrix->updateColorDelta();
             btn->setDown(true);
+            emit animationValueChanged(control->m_resource);
         }
         else if (control->m_type == VCMatrixControl::Text)
         {
@@ -1263,6 +1266,7 @@ void VCMatrix::slotCustomControlClicked()
             if (instantChanges() == true)
                 matrix->updateColorDelta();
             btn->setDown(true);
+            emit animationValueChanged("Text");
         }
     }
 }
@@ -1286,7 +1290,7 @@ void VCMatrix::slotCustomControlValueChanged()
             matrix->setColor(0, color);
             if (instantChanges() == true)
                 matrix->updateColorDelta();
-            emit mtxColor1Changed();
+            emit mtxColorChanged(1);
         }
         else if (control->m_type == VCMatrixControl::Color2Knob)
         {
@@ -1297,7 +1301,7 @@ void VCMatrix::slotCustomControlValueChanged()
             matrix->setColor(1, color);
             if (instantChanges() == true)
                 matrix->updateColorDelta();
-            emit mtxColor2Changed();
+            emit mtxColorChanged(2);
         }
         else if (control->m_type == VCMatrixControl::Color3Knob)
         {
@@ -1306,7 +1310,7 @@ void VCMatrix::slotCustomControlValueChanged()
             color = (color & ~control->m_color.rgb()) | (knobValueColor & control->m_color.rgb());
 
             matrix->setColor(2, color);
-            emit mtxColor3Changed();
+            emit mtxColorChanged(3);
         }
         else if (control->m_type == VCMatrixControl::Color4Knob)
         {
@@ -1315,7 +1319,7 @@ void VCMatrix::slotCustomControlValueChanged()
             color = (color & ~control->m_color.rgb()) | (knobValueColor & control->m_color.rgb());
 
             matrix->setColor(3, color);
-            emit mtxColor4Changed();
+            emit mtxColorChanged(4);
         }
         else if (control->m_type == VCMatrixControl::Color5Knob)
         {
@@ -1324,7 +1328,7 @@ void VCMatrix::slotCustomControlValueChanged()
             color = (color & ~control->m_color.rgb()) | (knobValueColor & control->m_color.rgb());
 
             matrix->setColor(4, color);
-            emit mtxColor5Changed();
+            emit mtxColorChanged(5);
         }
         else
         {

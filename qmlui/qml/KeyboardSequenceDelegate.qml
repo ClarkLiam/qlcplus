@@ -33,6 +33,8 @@ Column
     property string sequence
     property bool invalid: false
 
+    signal requestCustomFeedbackPopup()
+
     GridLayout
     {
         width: parent.width
@@ -52,12 +54,12 @@ Column
             Layout.columnSpan: 3
             height: UISettings.listItemHeight
             currValue: controlID
-            onValueChanged:
+            onActivated: (index) =>
             {
-                if (widgetObjRef && value != controlID)
+                if (widgetObjRef && currValue !== controlID)
                 {
-                    console.log("Key control changed " + value)
-                    controlID = value
+                    console.log("Key control changed " + currValue)
+                    controlID = currValue
                     virtualConsole.updateKeySequenceControlID(widgetObjRef, controlID, sequence)
                 }
             }
@@ -95,7 +97,7 @@ Column
 
             onToggled:
             {
-                if (checked == true)
+                if (checked === true)
                 {
                     if (invalid === false &&
                         virtualConsole.enableKeyAutoDetection(widgetObjRef, controlID, sequence) === true)

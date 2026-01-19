@@ -107,6 +107,11 @@ Column
         ceSelector.selectItem(stepIndex, cStepsList.model, multiSelect)
     }
 
+    function resetStepSelection()
+    {
+        ceSelector.resetSelection(cStepsList.model)
+    }
+
     ModelSelector
     {
         id: ceSelector
@@ -391,7 +396,7 @@ Column
         clip: true
         preferredHighlightBegin: 0
         preferredHighlightEnd: height / 2
-        highlightRangeMode: ListView.ApplyRange
+        highlightRangeMode: isRunning ? ListView.ApplyRange : ListView.NoHighlightRange
 
         property bool dragActive: false
         property int dragInsertIndex: -1
@@ -442,7 +447,7 @@ Column
 
                 property alias itemDelegate: csDelegate
 
-                Keys.onPressed:
+                Keys.onPressed: (event) =>
                 {
                     if (event.key === Qt.Key_Return ||
                         event.key === Qt.Key_Enter)
@@ -474,7 +479,7 @@ Column
                         if (model.isSelected)
                             return
 
-                        ceSelector.selectItem(index, cStepsList.model, mouse.modifiers & Qt.ControlModifier)
+                        ceSelector.selectItem(index, cStepsList.model, mouse.modifiers)
                         if (mouse.modifiers === 0)
                         {
                             widgetRoot.indexChanged(index)
@@ -588,7 +593,7 @@ Column
             }
             onPositionChanged: (drag) =>
             {
-                var idx = cStepsList.indexAt(drag.x, drag.y)
+                var idx = cStepsList.indexAt(drag.x, drag.y + cStepsList.contentY)
                 var item = cStepsList.itemAt(drag.x, drag.y)
                 var itemY = item.mapToItem(cStepsList, 0, 0).y
                 //console.log("Item index:" + idx)

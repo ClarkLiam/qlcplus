@@ -36,6 +36,7 @@
 #include "treemodel.h"
 #include "qlcconfig.h"
 #include "qlcfile.h"
+#include "qlcmodifierscache.h"
 #include "fixture.h"
 #include "tardis.h"
 #include "doc.h"
@@ -406,13 +407,18 @@ bool FixtureManager::deleteFixtureInGroup(quint32 groupID, quint32 itemID, QStri
     //quint16 headIndex = FixtureUtils::itemHeadIndex(itemID);
     //quint16 linkedIndex = FixtureUtils::itemLinkedIndex(itemID);
 
-    //TODO: tardis
+    //Tardis::instance()->enqueueAction(Tardis::FixtureDelete, fxID,
+    //                                  Tardis::instance()->actionToByteArray(Tardis::FixtureCreate, fxID), QVariant());
 
     qDebug() << "Removing fixture" << fxID << "from group" << group->name();
     group->resignFixture(fxID);
 
     m_fixtureTree->removeItem(path);
     emit groupsTreeModelChanged();
+
+    // if the group is empty, remove the group too
+    if (group->fixtureList().isEmpty())
+        deleteFixtureGroups(QVariantList() << group->id());
 
     return true;
 }
@@ -503,7 +509,7 @@ void FixtureManager::setItemRoleData(int itemID, int index, QString role, QVaria
     if (index >= 0 && channel == nullptr)
         return;
 
-    qDebug() << "Set fixture data" << fixture->name() << role << value;
+    qDebug() << "Set fixture data" << fixture->name() << index << role << value;
 
     if (role == "flags")
     {
@@ -535,11 +541,11 @@ void FixtureManager::setItemRoleData(int itemID, int index, QString role, QVaria
                 forcedLTP.removeOne(index);
             break;
             case ForcedHTP:
-                if (channel->group() != QLCChannel::Intensity)
+                if (channel->group() != QLCChannel::Intensity && !forcedHTP.contains(index))
                     forcedHTP.append(index);
             break;
             case ForcedLTP:
-                if (channel->group() == QLCChannel::Intensity)
+                if (channel->group() == QLCChannel::Intensity && !forcedLTP.contains(index))
                     forcedLTP.append(index);
             break;
         }
@@ -2414,6 +2420,15 @@ void FixtureManager::selectChannelModifier(QString name)
     emit channelModifierValuesChanged();
 }
 
+bool FixtureManager::isSystemChannelModifier(QString name) const
+{
+    ChannelModifier *modifier = m_doc->modifiersCache()->modifier(name);
+    if (modifier == nullptr)
+        return false;
+
+    return modifier->type() == ChannelModifier::SystemTemplate;
+}
+
 void FixtureManager::setChannelModifier(quint32 itemID, quint32 channelIndex)
 {
     quint32 fixtureID = FixtureUtils::itemFixtureID(itemID);
@@ -2425,7 +2440,9 @@ void FixtureManager::setChannelModifier(quint32 itemID, quint32 channelIndex)
 
     // update UI tree
     setItemRoleData(itemID, channelIndex, "modifier", m_selectedChannelModifier == nullptr ?
-                    "None" : m_selectedChannelModifier->name());
+                    "" : m_selectedChannelModifier->name());
+
+    m_doc->setModified(); // TODO: tardis
 }
 
 void FixtureManager::showModifierEditor(quint32 itemID, quint32 channelIndex)
@@ -2467,4 +2484,49 @@ QVariantList FixtureManager::channelModifierValues() const
     return values;
 }
 
+bool FixtureManager::saveChannelModifier(QString name, QVariantList values)
+{
+    QString trimmedName = name.simplified();
+    if (trimmedName.isEmpty())
+        return false;
 
+    ChannelModifier *modifier = m_doc->modifiersCache()->modifier(trimmedName);
+    if (modifier != nullptr && modifier->type() == ChannelModifier::SystemTemplate)
+        return false;
+
+    QList< QPair<uchar, uchar> > map;
+    for (int i = 0; i + 1 < values.count(); i += 2)
+    {
+        uchar orig = qBound(0, values.at(i).toInt(), 255);
+        uchar mod = qBound(0, values.at(i + 1).toInt(), 255);
+        map.append(QPair<uchar, uchar>(orig, mod));
+    }
+
+    QString filename = QString("%1/%2%3")
+            .arg(QLCModifiersCache::userTemplateDirectory().absolutePath())
+            .arg(trimmedName)
+            .arg(KExtModifierTemplate);
+
+    ChannelModifier *newModifier = new ChannelModifier();
+    newModifier->setName(trimmedName);
+    newModifier->setModifierMap(map);
+    newModifier->saveXML(filename);
+
+    if (modifier == nullptr)
+    {
+        if (m_doc->modifiersCache()->addModifier(newModifier) == false)
+        {
+            delete newModifier;
+            return false;
+        }
+    }
+    else
+    {
+        modifier->setModifierMap(map);
+        delete newModifier;
+    }
+
+    emit channelModifiersListChanged();
+    emit channelModifierValuesChanged();
+    return true;
+}

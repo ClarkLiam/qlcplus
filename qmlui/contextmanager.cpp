@@ -48,6 +48,7 @@ ContextManager::ContextManager(QQuickView *view, Doc *doc,
     , m_monProps(doc->monitorProperties())
     , m_fixtureManager(fxMgr)
     , m_functionManager(funcMgr)
+    , m_currentSubContext("2D")
     , m_multipleSelection(false)
     , m_positionPicking(false)
     , m_universeFilter(Universe::invalid())
@@ -223,6 +224,20 @@ QString ContextManager::currentContext() const
         return "";
 
     return m_view->rootObject()->property("currentContext").toString();
+}
+
+QString ContextManager::currentSubContext() const
+{
+    return m_currentSubContext;
+}
+
+void ContextManager::setCurrentSubContext(QString ctx)
+{
+    if (ctx == m_currentSubContext)
+        return;
+
+    m_currentSubContext = ctx;
+    emit currentSubContextChanged();
 }
 
 MainView2D *ContextManager::get2DView()
@@ -639,6 +654,9 @@ void ContextManager::setFixtureSelection(quint32 itemID, int headIndex, bool ena
 
 void ContextManager::setFixtureIDSelection(quint32 fixtureID, bool enable)
 {
+    if (fixtureID == Fixture::invalidId())
+        return;
+
     for (quint32 &subID : m_monProps->fixtureIDList(fixtureID))
     {
         quint16 headIndex = m_monProps->fixtureHeadIndex(subID);

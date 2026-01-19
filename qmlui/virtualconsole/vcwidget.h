@@ -92,6 +92,8 @@ class VCWidget : public QObject
     Q_PROPERTY(QColor foregroundColor READ foregroundColor WRITE setForegroundColor NOTIFY foregroundColorChanged)
     Q_PROPERTY(QFont font READ font WRITE setFont NOTIFY fontChanged)
     Q_PROPERTY(int page READ page WRITE setPage NOTIFY pageChanged)
+    Q_PROPERTY(bool supportsPresets READ supportsPresets CONSTANT)
+    Q_PROPERTY(QString presetsResource READ presetsResource CONSTANT)
 
     Q_PROPERTY(int externalControlsCount READ externalControlsCount CONSTANT)
     Q_PROPERTY(QVariant externalControlsList READ externalControlsList CONSTANT)
@@ -117,6 +119,12 @@ public:
     /** Create a copy of this widget into the given parent and return it
       * Pure virtual method: subclasses must reimplement this */
     virtual VCWidget *createCopy(VCWidget *parent);
+
+    /** Return true if this widget supports presets */
+    virtual bool supportsPresets() const;
+
+    /** Return a QML resource for preset properties */
+    virtual QString presetsResource() const;
 
 protected:
     /** Copy the contents for this widget from the given widget */
@@ -398,7 +406,7 @@ public:
      *  and Audio Triggers can benefit from this.
      *  Basically when placed in a Solo frame, with this method it is
      *  possible to stop the currently running Function */
-    virtual void notifyFunctionStarting(VCWidget *widget, quint32 fid, qreal fIntensity);
+    virtual void notifyFunctionStarting(VCWidget *widget, quint32 fid, qreal fIntensity, bool excludeMonitored);
 
     virtual void adjustFunctionIntensity(Function *f, qreal value);
 
@@ -636,8 +644,17 @@ protected:
     /** Write this widget's geometry and visibility to an XML document */
     bool saveXMLWindowState(QXmlStreamWriter *doc);
 
-    /** Save all the input sources and key combination with the given $controlId
-     *  in a tag with the given $tagName */
+    /** Save all the input sources and key combination with the given
+     *  $controlId in a tag with the given $tagName
+     *  When $unified is set to true, an input control will look like this
+     *
+     *  <Input ID="1" Universe="0" Channel="68" Key="G"/>
+     *
+     *  When false, it will look like this
+     *
+     *  <Input ID="1" Universe="0" Channel="68"/>
+     *  <Key>G</Key>
+     */
     bool saveXMLInputControl(QXmlStreamWriter *doc, quint8 controlId, bool unified = true, QString tagName = QString());
 };
 

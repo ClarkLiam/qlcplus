@@ -3,15 +3,43 @@ qlcplus (4.14.4) stable; urgency=low
   * Implemented autosave after 30 seconds of inactivity
   * engine: fix crash when loading fixture definitions without modes
   * DMX monitor: apply gel color immediately (thanks to jpue)
+  * Show Manager: fix crash with an infinite duration RGBMatrix
+  * Script Editor: improve systemcommand parsing (thanks to jpue)
   * Virtual Console/Clock: countdown mode can now run a list of Functions
+  * Virtual Console/Solo Frame: add an option to exclude functions monitored by buttons to be stopped
+  * Virtual Console/Slider: fix level tab channel list sorting (thanks to jpue)
+  * webaccess: improve CSS consistency across browsers (thanks to jpue)
+  * webaccess: fix synchronization of animation widget RGB colors (thanks to jpue)
+  * webaccess: add getWidgetFunction API (thanks to mccartyp)
   * Fixture Editor: in mode editor, don't allow a channel to act on itself (thanks to Edgar Aichinger)
-  * New fixture: beamZ COB 50 (thanks to Yestalgia)
+  * Input profiles: updated AKAI APC40 mkII profile (thanks to David Himes)
+  * New fixtures: beamZ COB 50, Chauvet EZLink Par Q6 BT, Chauvet Freedom Par Hex 4 (thanks to Yestalgia)
   * New fixture: OXO ColorZoom 180 (thanks to David Garyga)
   * New fixture: Cameo P2 T (thanks to Christoph Müllner)
   * New fixtures: Stairville Remus HexSpot 515, Remus QuadZoom 610, Varytec GigaBar 240 LED, Stairville RevueLED 120 COB True White (thanks to Liam Clark)
   * New fixtures: MagicFX Eco2Jet, Psyco2Jet, Stage Flame, SmokeJet, StadiumShot III, StadiumBlower, StadiumBlaster, SwirlFan II (thanks to Liam Clark)
   * New fixture: Martin ERA 150 Wash (thanks to Liam Clark)
   * New fixtures: Eurolite LED Silent PAR 6, beamZ BT430 PAR (thanks to Pascal Fleury)
+  * New fixtures: lightmaXX LED Gun, Cameo Octafly XS, Ghost Spoty (thanks to Arnaud)
+  * New fixture: ColorKey Scorpius (thanks to David Himes)
+  * New fixture: Varytec LED Derby ST (thanks to Valentin Simson)
+  * New fixtures: ETC ColorSource Fresnel V, LDDE NanoPix Cyc, LDDE Spectra MasterD 1000 (thanks to Edgar Aichinger)
+  * New fixtures: ACME Ginamp, Astera Titan Tube FP1 (thanks to Michael Tosatto)
+  * New fixture: UKing ZQ01137 18x RGB+UV PAR (thanks to Adrienne Teicher)
+  * New fixture: Eliminator Lighting MEGA HEX L PAR (thanks to Jan Willem)
+  * New fixture: Stairville LED Vintage Bowl 50 RGBA (thanks to Jean-Daniel Garcia)
+  * New fixtures: beamZ Blaze 1200, Robe Robin T1 Profile, Equinox Microbar Multi System (thanks to Fede79)
+  * New fixture: JB Systems LED Diamond II (thanks to Wim Van Laer)
+  * New fixture: Chauvet Intimidator Beam 140SR V2 (thanks to Jason)
+  * New fixture: Shehds 120W 4in1 RGBW LED Wash Moving Head, beamZ BUV 463 LED UV (thanks to Michel Sliepenbeek)
+  * New fixture: Stairville Retro Flat Par 18x12W RGB WW (thanks to Niels Ott)
+  * New fixtures: Clay Paky Stage Zoom 1200, IMG Stageline Twist 1LED (thanks to Albert)
+  * New fixtures: Martin ELP PAR, MDG ATMe, Prolights EclExpo Flood 150FC, Showtec Pixel Bar 8 COB (thanks to saimyx)
+  * New fixture: Chauvet onAir Panel 1 IP (thanks to Giacomo Gorini)
+  * New fixture: American DJ 5PX Hex (thanks to Hayley)
+  * New fixture: Venue Tetra 6 (thanks to John Stoffel)
+  * New fixture: Cameo OPUS S5 (thanks to Tim Nelles)
+  * New fixtures: Prolights EclCyclorama 100, EclFresnel 2KTW, EclPar IPMFC, EclProfile FS, Jet Wash19, Ra 2000Profile (thanks to Tolmino Muccitelli)
 
 -- Massimo Callegari <massimocallegari@yahoo.it>  Sun, 4 Jan 2026 18:19:20 +0200
 

@@ -20,6 +20,7 @@
 #include <QQuickItemGrabResult>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
+#include <QCoreApplication>
 #include <QtCore/qbuffer.h>
 #include <QFontDatabase>
 #include <QOpenGLContext>
@@ -71,6 +72,7 @@
 
 App::App()
     : QQuickView()
+    , m_forceQuit(false)
     , m_translator(nullptr)
     , m_fixtureBrowser(nullptr)
     , m_fixtureManager(nullptr)
@@ -101,6 +103,7 @@ App::App()
     connect(this, &App::screenChanged, this, &App::slotScreenChanged);
     connect(this, SIGNAL(closing(QQuickCloseEvent*)), this, SLOT(slotClosing()));
     connect(this, &App::sceneGraphInitialized, this, &App::slotSceneGraphInitialized);
+    qApp->installEventFilter(this);
 }
 
 App::~App()
@@ -276,17 +279,8 @@ int App::accessMask() const
 
 bool App::is3DSupported() const
 {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    if (openglContext() == nullptr)
-        return false;
-
-    int glVersion = (openglContext()->format().majorVersion() * 10) + openglContext()->format().minorVersion();
-    return glVersion < 33 ? false : true;
-#else
     // TODO: Qt6
-
     return true;
-#endif
 }
 
 void App::aboutQt()
@@ -294,9 +288,9 @@ void App::aboutQt()
     qApp->aboutQt();
 }
 
-void App::exit()
+void App::exit(bool force)
 {
-    //destroy();
+    m_forceQuit = force;
     QApplication::quit();
 }
 
@@ -335,7 +329,7 @@ bool App::event(QEvent *event)
 {
     if (event->type() == QEvent::Close)
     {
-        if (m_doc->isModified())
+        if (m_doc->isModified() && m_forceQuit == false)
         {
             QMetaObject::invokeMethod(rootObject(), "saveBeforeExit");
             event->ignore();
@@ -345,16 +339,24 @@ bool App::event(QEvent *event)
     return QQuickView::event(event);
 }
 
+bool App::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::Quit)
+    {
+        if (m_doc && m_doc->isModified() && rootObject() && m_forceQuit == false)
+        {
+            QMetaObject::invokeMethod(rootObject(), "saveBeforeExit");
+            event->ignore();
+            return true;
+        }
+    }
+
+    return QQuickView::eventFilter(obj, event);
+}
+
 void App::slotSceneGraphInitialized()
 {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    if (openglContext() == nullptr)
-        return;
-
-    qDebug() << "OpenGL version: " << openglContext()->format().majorVersion() << openglContext()->format().minorVersion();
-#else
     // TODO: Qt6
-#endif
 }
 
 void App::slotScreenChanged(QScreen *screen)
@@ -435,7 +437,7 @@ void App::initDoc()
 
     /* Load plugins */
 #if defined Q_OS_ANDROID
-    QString pluginsPath = QString("%1/../lib").arg(QDir::currentPath());
+    QString pluginsPath = QCoreApplication::applicationDirPath();
     m_doc->ioPluginCache()->load(QDir(pluginsPath));
 #else
     m_doc->ioPluginCache()->load(IOPluginCache::systemPluginDirectory());
@@ -909,9 +911,7 @@ QFile::FileError App::saveXML(const QString& fileName, bool autosave)
     QXmlStreamWriter doc(&file);
     doc.setAutoFormatting(true);
     doc.setAutoFormattingIndent(1);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    doc.setCodec("UTF-8");
-#endif
+
     doc.writeStartDocument();
     doc.writeDTD(QString("<!DOCTYPE %1>").arg(KXMLQLCWorkspace));
 
@@ -1068,4 +1068,3 @@ void App::closeFixtureEditor()
                               Q_ARG(QVariant, "FIXANDFUNC"),
                               Q_ARG(QVariant, "qrc:/FixturesAndFunctions.qml"));
 }
-

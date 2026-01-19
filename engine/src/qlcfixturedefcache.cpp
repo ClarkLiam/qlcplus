@@ -169,6 +169,29 @@ bool QLCFixtureDefCache::reloadFixtureDef(QLCFixtureDef *fixtureDef)
     return true;
 }
 
+bool QLCFixtureDefCache::reloadOrAddFixtureDef(QLCFixtureDef *fixtureDef)
+{
+    // check upon bundled definitions
+    QListIterator <QLCFixtureDef*> it(m_defs);
+    while (it.hasNext() == true)
+    {
+        QLCFixtureDef *def = it.next();
+        if (def->manufacturer() == fixtureDef->manufacturer() &&
+            def->model() == fixtureDef->model())
+        {
+            // set as user and perform a deep copy
+            def->setIsUser(true);
+            *def = *fixtureDef;
+            return true;
+        }
+    }
+
+    // add a new user fixture
+    addFixtureDef(fixtureDef);
+
+    return true;
+}
+
 bool QLCFixtureDefCache::load(const QDir& dir)
 {
     qDebug() << Q_FUNC_INFO << dir.path();

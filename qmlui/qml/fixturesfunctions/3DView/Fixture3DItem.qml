@@ -240,6 +240,16 @@ Entity
         outDepthCone.spotlightConeMesh = sceneEntity.coneMesh
     }
 
+    function cleanupScattering()
+    {
+        if (shadingCone)
+            shadingCone.destroy()
+        if (scatteringCone)
+            scatteringCone.destroy()
+        if (outDepthCone)
+            outDepthCone.destroy()
+    }
+
     ShutterAnimator { id: sAnimator }
 
     QQ2.NumberAnimation on panRotation
@@ -263,8 +273,8 @@ Entity
             height: 1024
             format: Texture.D32F
             generateMipMaps: false
-            magnificationFilter: Texture.Linear
-            minificationFilter: Texture.Linear
+            magnificationFilter: Texture.Nearest
+            minificationFilter: Texture.Nearest
             wrapMode
             {
                 x: WrapMode.ClampToEdge
@@ -349,5 +359,4 @@ Entity
 
     components: [ eSceneLoader, transform ]
 }
-
 

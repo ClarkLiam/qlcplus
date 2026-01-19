@@ -117,9 +117,10 @@ private:
      *********************************************************************/
 public:
     /** @reimpl */
-    virtual void run(); //thread run function
+    virtual void run() override; //thread run function
 
     void stop();
+    void setUserStop(bool stop);
 
 protected:
     /** State machine variables */

@@ -52,14 +52,14 @@ void printVersion()
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-// Since Qt6, the default rendering backend is Rhi. QLC doesn't support it yet so OpenGL have to be forced.
+
+    // Since Qt6, the default rendering backend is Rhi. 
+    // QLC+ doesn't support it yet so OpenGL have to be forced.
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     qputenv("QT3D_RENDERER", "opengl");
-#endif
 
     QApplication::setOrganizationName("qlcplus");
-    QApplication::setOrganizationDomain("org");
+    QApplication::setOrganizationDomain("qlcplus.org");
     QApplication::setApplicationName(APPNAME);
     QApplication::setApplicationVersion(QString(APPVERSION));
 
@@ -79,6 +79,10 @@ int main(int argc, char *argv[])
     QCommandLineOption openLastOption(QStringList() << "9" << "openlast",
                                       "Open the file from last session.");
     parser.addOption(openLastOption);
+
+    QCommandLineOption fullscreenOption(QStringList() << "f" << "fullscreen",
+                                        "Start the application in fullscreen mode");
+    parser.addOption(fullscreenOption);
 
     QCommandLineOption kioskOption(QStringList() << "k" << "kiosk",
                                       "Enable kiosk mode (only Virtual Console)");
@@ -174,6 +178,10 @@ int main(int argc, char *argv[])
     // open last file
     if (parser.isSet(openLastOption))
         qlcplusApp.loadLastWorkspace();
+
+    // fullscreen mode
+    if (parser.isSet(fullscreenOption))
+        qlcplusApp.toggleFullscreen();
 
     return app.exec();
 }

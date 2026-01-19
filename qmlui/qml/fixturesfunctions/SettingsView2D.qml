@@ -39,6 +39,13 @@ Rectangle
     property bool fxPropsVisible: selFixturesCount ? true : false
     property vector3d fxRotation: selFixturesCount === 1 ? contextManager.fixturesRotation : lastRotation
     property vector3d lastRotation
+    property int previousGridUnits: MonitorProperties.Meters
+
+    Component.onCompleted:
+    {
+        if (View2D)
+            previousGridUnits = View2D.gridUnits
+    }
 
     onSelFixturesCountChanged:
     {
@@ -176,8 +183,40 @@ Rectangle
                         currentIndex: View2D.gridUnits
                         onCurrentIndexChanged:
                         {
-                            if (settingsRoot.visible && View2D)
-                                View2D.gridUnits = currentIndex
+                            if (settingsRoot.visible === false || View2D === null || contextManager === null)
+                            {
+                                if (View2D)
+                                    View2D.gridUnits = currentIndex
+                                previousGridUnits = currentIndex
+                                return
+                            }
+
+                            if (currentIndex !== previousGridUnits)
+                            {
+                                var factor = 1.0
+                                if (previousGridUnits === MonitorProperties.Meters &&
+                                    currentIndex === MonitorProperties.Feet)
+                                {
+                                    factor = 3.280839895
+                                }
+                                else if (previousGridUnits === MonitorProperties.Feet &&
+                                         currentIndex === MonitorProperties.Meters)
+                                {
+                                    factor = 0.3048
+                                }
+
+                                if (factor !== 1.0)
+                                {
+                                    var newSize = Qt.vector3d(
+                                                Math.round(envSize.x * factor),
+                                                Math.round(envSize.y * factor),
+                                                Math.round(envSize.z * factor))
+                                    contextManager.environmentSize = newSize
+                                }
+                            }
+
+                            View2D.gridUnits = currentIndex
+                            previousGridUnits = currentIndex
                         }
                     }
 

@@ -19,7 +19,7 @@ endif()
 
 if(qmlui)
     add_definitions(-DQMLUI)
-    set(APPVERSION "5.1.0 GIT")
+    set(APPVERSION "5.1.1 GIT")
 else()
     set(APPVERSION "4.14.4 GIT")
 endif()
@@ -427,10 +427,11 @@ endif ()
 
 # udev rules
 if(UNIX AND NOT APPLE)
-    if (${INSTALL_ROOT} STREQUAL "/")
+    if (NOT UDEVRULESDIR)
         set(UDEVRULESDIR "/etc/udev/rules.d")
-    else()
-        set(UDEVRULESDIR "${INSTALL_ROOT}/etc/udev/rules.d")
+    endif()
+    if (NOT ${INSTALL_ROOT} STREQUAL "/")
+        set(UDEVRULESDIR "${INSTALL_ROOT}${UDEVRULESDIR}")
     endif()
 endif()
 

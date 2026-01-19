@@ -47,21 +47,21 @@ class Doc;
  * @{
  */
 
-#define KXMLQLCVCCueList                QStringLiteral("CueList")
-#define KXMLQLCVCCueListFunction        QStringLiteral("Function") // Legacy
-#define KXMLQLCVCCueListChaser          QStringLiteral("Chaser")
-#define KXMLQLCVCCueListPlaybackLayout  QStringLiteral("PlaybackLayout")
+#define KXMLQLCVCCueList                 QStringLiteral("CueList")
+#define KXMLQLCVCCueListFunction         QStringLiteral("Function") // Legacy
+#define KXMLQLCVCCueListChaser           QStringLiteral("Chaser")
+#define KXMLQLCVCCueListPlaybackLayout   QStringLiteral("PlaybackLayout")
 #define KXMLQLCVCCueListNextPrevBehavior QStringLiteral("NextPrevBehavior")
-#define KXMLQLCVCCueListCrossfade       QStringLiteral("Crossfade")
-#define KXMLQLCVCCueListBlend           QStringLiteral("Blend")
-#define KXMLQLCVCCueListLinked          QStringLiteral("Linked")
-#define KXMLQLCVCCueListNext            QStringLiteral("Next")
-#define KXMLQLCVCCueListPrevious        QStringLiteral("Previous")
-#define KXMLQLCVCCueListPlayback        QStringLiteral("Playback")
-#define KXMLQLCVCCueListStop            QStringLiteral("Stop")
-#define KXMLQLCVCCueListCrossfadeLeft   QStringLiteral("CrossLeft")
-#define KXMLQLCVCCueListCrossfadeRight  QStringLiteral("CrossRight")
-#define KXMLQLCVCCueListSlidersMode     QStringLiteral("SlidersMode")
+#define KXMLQLCVCCueListCrossfade        QStringLiteral("Crossfade")
+#define KXMLQLCVCCueListBlend            QStringLiteral("Blend")
+#define KXMLQLCVCCueListLinked           QStringLiteral("Linked")
+#define KXMLQLCVCCueListNext             QStringLiteral("Next")
+#define KXMLQLCVCCueListPrevious         QStringLiteral("Previous")
+#define KXMLQLCVCCueListPlayback         QStringLiteral("Playback")
+#define KXMLQLCVCCueListStop             QStringLiteral("Stop")
+#define KXMLQLCVCCueListCrossfadeLeft    QStringLiteral("CrossLeft")
+#define KXMLQLCVCCueListCrossfadeRight   QStringLiteral("CrossRight")
+#define KXMLQLCVCCueListSlidersMode      QStringLiteral("SlidersMode")
 
 /**
  * VCCueList provides a \ref VirtualConsole widget to control cue lists.
@@ -69,7 +69,7 @@ class Doc;
  * @see VCWidget
  * @see VirtualConsole
  */
-class VCCueList : public VCWidget
+class VCCueList final : public VCWidget
 {
     Q_OBJECT
     Q_DISABLE_COPY(VCCueList)
@@ -94,18 +94,18 @@ public:
     ~VCCueList();
 
     /** @reimp */
-    void enableWidgetUI(bool enable);
+    void enableWidgetUI(bool enable) override;
 
     /*************************************************************************
      * Clipboard
      *************************************************************************/
 public:
     /** Create a copy of this widget into the given parent */
-    VCWidget *createCopy(VCWidget *parent);
+    VCWidget *createCopy(VCWidget *parent) override;
 
 protected:
     /** Copy the contents for this widget from another widget */
-    bool copyFrom(const VCWidget *widget);
+    bool copyFrom(const VCWidget *widget) override;
 
     /*************************************************************************
      * Cue list
@@ -158,7 +158,7 @@ private:
 
 public:
     /** @reimp */
-    virtual void notifyFunctionStarting(quint32 fid, qreal intensity);
+    virtual void notifyFunctionStarting(quint32 fid, qreal intensity, bool excludeMonitored) override;
 
 private:
     /** Update the list of steps */
@@ -356,7 +356,7 @@ public:
     QKeySequence stopKeySequence() const;
 
 protected slots:
-    void slotKeyPressed(const QKeySequence& keySequence);
+    void slotKeyPressed(const QKeySequence& keySequence) override;
 
 private:
     QKeySequence m_nextKeySequence;
@@ -368,10 +368,10 @@ private:
      * External Input
      *************************************************************************/
 public:
-    void updateFeedback();
+    void updateFeedback() override;
 
 protected slots:
-    void slotInputValueChanged(quint32 universe, quint32 channel, uchar value);
+    void slotInputValueChanged(quint32 universe, quint32 channel, uchar value) override;
 
 private:
     quint32 m_nextLatestValue;
@@ -384,19 +384,19 @@ private:
      *************************************************************************/
 public:
     /** @reimp */
-    void adjustIntensity(qreal val);
+    void adjustIntensity(qreal val) override;
 
     /** @reimp */
-    void setCaption(const QString& text);
+    void setCaption(const QString& text) override;
 
     /** @reimp */
-    void setFont(const QFont& font);
+    void setFont(const QFont& font) override;
 
     /** @reimp */
-    void slotModeChanged(Doc::Mode mode);
+    void slotModeChanged(Doc::Mode mode) override;
 
     /** @reimp */
-    void editProperties();
+    void editProperties() override;
 
     /*********************************************************************
      * Web access
@@ -419,10 +419,10 @@ private:
      *************************************************************************/
 public:
     /** @reimp */
-    bool loadXML(QXmlStreamReader &root);
+    bool loadXML(QXmlStreamReader &root) override;
 
     /** @reimp */
-    bool saveXML(QXmlStreamWriter *doc);
+    bool saveXML(QXmlStreamWriter *doc) override;
 };
 
 /** @} */

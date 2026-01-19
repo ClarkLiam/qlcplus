@@ -36,7 +36,7 @@ class Doc;
  * @{
  */
 
-class VCSliderProperties : public QDialog, public Ui_VCSliderProperties
+class VCSliderProperties final : public QDialog, public Ui_VCSliderProperties
 {
     Q_OBJECT
     Q_DISABLE_COPY(VCSliderProperties)
@@ -55,6 +55,7 @@ protected slots:
     void slotModeLevelClicked();
     void slotModePlaybackClicked();
     void slotModeSubmasterClicked();
+    void slotTabChanged();
 
 protected:
     void setLevelPageVisibility(bool visible);
@@ -176,7 +177,7 @@ protected:
 
 protected slots:
     /** Callback for OK button clicks */
-    void accept();
+    void accept() override;
 
 protected:
     /** The slider, whose properties are being edited */

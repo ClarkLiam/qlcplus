@@ -28,13 +28,7 @@
 
 #include <Qt3DCore/QTransform>
 #include <Qt3DCore/QNode>
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
- #include <Qt3DRender/QGeometry>
- #include <Qt3DRender/QAttribute>
- #include <Qt3DRender/QBuffer>
-#else
- #include <Qt3DCore/QAttribute>
-#endif
+#include <Qt3DCore/QAttribute>
 #include <Qt3DRender/QParameter>
 #include <Qt3DExtras/QPhongMaterial>
 #include <Qt3DRender/QGeometryRenderer>
@@ -176,11 +170,20 @@ void MainView3D::resetItems()
     {
         it.next();
         SceneItem *e = it.value();
-        delete e->m_goboTexture;
-        delete e->m_selectionBox;
-        // delete e->m_rootItem; // TODO: with this -> segfault
         if (e->m_rootItem)
-            e->m_rootItem->setProperty("enabled", false); // workaround for the above
+            QMetaObject::invokeMethod(e->m_rootItem, "cleanupScattering");
+        if (e->m_goboTexture)
+            e->m_goboTexture->deleteLater();
+        if (e->m_selectionBox)
+        {
+            e->m_selectionBox->setParent(static_cast<Qt3DCore::QNode *>(nullptr));
+            e->m_selectionBox->deleteLater();
+        }
+        if (e->m_rootItem)
+        {
+            e->m_rootItem->setParent(static_cast<Qt3DCore::QNode *>(nullptr));
+            e->m_rootItem->deleteLater();
+        }
         delete e;
     }
 
@@ -194,7 +197,11 @@ void MainView3D::resetItems()
     {
         it2.next();
         SceneItem *e = it2.value();
-        delete e->m_rootItem;
+        if (e->m_rootItem)
+        {
+            e->m_rootItem->setParent(static_cast<Qt3DCore::QNode *>(nullptr));
+            e->m_rootItem->deleteLater();
+        }
     }
     m_genericMap.clear();
     m_genericItemsList->clear();
@@ -277,15 +284,23 @@ void MainView3D::setUniverseFilter(quint32 universeFilter)
         it.next();
         quint32 itemID = it.key();
 
-        quint32 fxID = FixtureUtils::itemFixtureID(itemID);
+        quint32 fixtureID = FixtureUtils::itemFixtureID(itemID);
 
-        Fixture *fixture = m_doc->fixture(fxID);
+        Fixture *fixture = m_doc->fixture(fixtureID);
         if (fixture == nullptr)
             return;
 
         SceneItem *meshRef = m_entitiesMap.value(itemID, nullptr);
 
         if (meshRef == nullptr || meshRef->m_rootItem == nullptr)
+            continue;
+
+        int linkedIndex = FixtureUtils::itemLinkedIndex(itemID);
+        int headIdx = FixtureUtils::itemHeadIndex(itemID);
+        quint32 flags = m_monProps->fixtureFlags(fixtureID, headIdx, linkedIndex);
+
+        // skip hidden items
+        if (flags & MonitorProperties::HiddenFlag)
             continue;
 
         if (universeFilter == Universe::invalid() || fixture->universe() == (quint32)universeFilter)
@@ -737,17 +752,7 @@ void getMeshCorners(QGeometryRenderer *mesh,
 
     if (!meshGeometry)
         return;
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    Qt3DRender::QAttribute *vPosAttribute = nullptr;
-    for (Qt3DRender::QAttribute *attribute : meshGeometry->attributes())
-    {
-        if (attribute->name() == Qt3DRender::QAttribute::defaultPositionAttributeName())
-        {
-            vPosAttribute = attribute;
-            break;
-        }
-    }
-#else
+
     Qt3DCore::QAttribute *vPosAttribute = nullptr;
     for (Qt3DCore::QAttribute *attribute : meshGeometry->attributes())
     {
@@ -757,7 +762,7 @@ void getMeshCorners(QGeometryRenderer *mesh,
             break;
         }
     }
-#endif
+
     if (vPosAttribute)
     {
         const float *bufferPtr =
@@ -1446,9 +1451,12 @@ void MainView3D::updateFixturePosition(quint32 itemID, QVector3D pos)
 
     //qDebug() << "Update 3D fixture position" << pos;
 
-    float x = (pos.x() / 1000.0) - (m_monProps->gridSize().x() / 2) + (mesh->m_volume.m_extents.x() / 2);
+    float unitScale = m_monProps->gridUnits() == MonitorProperties::Meters ? 1.0f : 0.3048f;
+    QVector3D gridMeters = m_monProps->gridSize() * unitScale;
+
+    float x = (pos.x() / 1000.0) - (gridMeters.x() / 2) + (mesh->m_volume.m_extents.x() / 2);
     float y = (pos.y() / 1000.0) + (mesh->m_volume.m_extents.y() / 2);
-    float z = (pos.z() / 1000.0) - (m_monProps->gridSize().z() / 2) + (mesh->m_volume.m_extents.z() / 2);
+    float z = (pos.z() / 1000.0) - (gridMeters.z() / 2) + (mesh->m_volume.m_extents.z() / 2);
 
     /* move the root mesh first */
     mesh->m_rootTransform->setTranslation(QVector3D(x, y, z));
@@ -1550,15 +1558,29 @@ void MainView3D::removeFixtureItem(quint32 itemID)
     if (isEnabled() == false || m_entitiesMap.contains(itemID) == false)
         return;
 
+    QMetaObject::invokeMethod(m_scene3D, "updateFrameGraph", Q_ARG(QVariant, false));
+
     SceneItem *mesh = m_entitiesMap.take(itemID);
 
-    delete mesh->m_goboTexture;
-    delete mesh->m_selectionBox;
-    delete mesh->m_rootTransform;
-//    delete mesh->m_rootItem; // this will cause a segfault
-    mesh->m_rootItem->setProperty("enabled", false); // workaround for the above
+    if (mesh->m_rootItem)
+        QMetaObject::invokeMethod(mesh->m_rootItem, "cleanupScattering");
+
+    if (mesh->m_goboTexture)
+        mesh->m_goboTexture->deleteLater();
+    if (mesh->m_selectionBox)
+    {
+        mesh->m_selectionBox->setParent(static_cast<Qt3DCore::QNode *>(nullptr));
+        mesh->m_selectionBox->deleteLater();
+    }
+    if (mesh->m_rootItem)
+    {
+        mesh->m_rootItem->setParent(static_cast<Qt3DCore::QNode *>(nullptr));
+        mesh->m_rootItem->deleteLater();
+    }
 
     delete mesh;
+
+    QMetaObject::invokeMethod(m_scene3D, "updateFrameGraph", Q_ARG(QVariant, true));
 }
 
 /*********************************************************************
@@ -1768,8 +1790,16 @@ void MainView3D::removeSelectedGenericItems()
         SceneItem *meshRef = m_genericMap.take(id);
         if (meshRef)
         {
-            delete meshRef->m_rootItem;
-            delete meshRef->m_selectionBox;
+            if (meshRef->m_rootItem)
+            {
+                meshRef->m_rootItem->setParent(static_cast<Qt3DCore::QNode *>(nullptr));
+                meshRef->m_rootItem->deleteLater();
+            }
+            if (meshRef->m_selectionBox)
+            {
+                meshRef->m_selectionBox->setParent(static_cast<Qt3DCore::QNode *>(nullptr));
+                meshRef->m_selectionBox->deleteLater();
+            }
         }
         m_monProps->removeItem(id);
     }
@@ -1843,9 +1873,12 @@ void MainView3D::updateGenericItemPosition(quint32 itemID, QVector3D pos)
     if (item == nullptr || item->m_rootTransform == nullptr)
         return;
 
-    float x = (pos.x() / 1000.0) - (m_monProps->gridSize().x() / 2) + (item->m_volume.m_extents.x() / 2);
+    float unitScale = m_monProps->gridUnits() == MonitorProperties::Meters ? 1.0f : 0.3048f;
+    QVector3D gridMeters = m_monProps->gridSize() * unitScale;
+
+    float x = (pos.x() / 1000.0) - (gridMeters.x() / 2) + (item->m_volume.m_extents.x() / 2);
     float y = (pos.y() / 1000.0) + (item->m_volume.m_extents.y() / 2);
-    float z = (pos.z() / 1000.0) - (m_monProps->gridSize().z() / 2) + (item->m_volume.m_extents.z() / 2);
+    float z = (pos.z() / 1000.0) - (gridMeters.z() / 2) + (item->m_volume.m_extents.z() / 2);
     item->m_rootTransform->setTranslation(QVector3D(x, y, z));
 }
 

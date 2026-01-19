@@ -349,8 +349,7 @@ public:
      *  can benefit from this.
      *  Basically when placed in a Solo frame, with this method it is
      *  possible to stop the currently running Function */
-    virtual void notifyFunctionStarting(quint32 fid, qreal intensity)
-    { Q_UNUSED(fid); Q_UNUSED(intensity); }
+    virtual void notifyFunctionStarting(quint32 fid, qreal intensity, bool excludeMonitored);
 
     virtual void adjustFunctionIntensity(Function *f, qreal value);
 
@@ -625,14 +624,14 @@ protected:
      * Event handlers
      *********************************************************************/
 protected:
-    virtual void paintEvent(QPaintEvent* e);
+    virtual void paintEvent(QPaintEvent* e) override;
 
-    virtual void mousePressEvent(QMouseEvent* e);
+    virtual void mousePressEvent(QMouseEvent* e) override;
     virtual void handleWidgetSelection(QMouseEvent* e);
 
-    virtual void mouseReleaseEvent(QMouseEvent* e);
-    virtual void mouseDoubleClickEvent(QMouseEvent* e);
-    virtual void mouseMoveEvent(QMouseEvent* e);
+    virtual void mouseReleaseEvent(QMouseEvent* e) override;
+    virtual void mouseDoubleClickEvent(QMouseEvent* e) override;
+    virtual void mouseMoveEvent(QMouseEvent* e) override;
 };
 
 /** @} */

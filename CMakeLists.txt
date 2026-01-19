@@ -27,11 +27,9 @@ if (ANDROID OR IOS)
 endif()
 
 if (ANDROID)
-    if(QT_VERSION_MAJOR GREATER 5)
-        set(QT_ANDROID_PACKAGE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/platforms/android CACHE INTERNAL "")
-    else()
-        set(ANDROID_PACKAGE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/platforms/android CACHE INTERNAL "")
-    endif()
+    set(ANDROID_PACKAGE_STAGING_DIR "${CMAKE_BINARY_DIR}/android-package")
+    # Tell Qt/Gradle to use the build-tree template
+    set(QT_ANDROID_PACKAGE_SOURCE_DIR "${ANDROID_PACKAGE_STAGING_DIR}" CACHE PATH "" FORCE)
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -93,24 +91,24 @@ endif()
 if(qmlui)
     if(WIN32)
        add_custom_target(unittests
-            COMMAND unittest_cmake.bat "qmlui" ${CMAKE_CURRENT_BINARY_DIR}
+            COMMAND unittest.bat "qmlui" ${CMAKE_CURRENT_BINARY_DIR}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
     else()
        add_custom_target(unittests
-            COMMAND ./unittest_cmake.sh "qmlui" ${CMAKE_CURRENT_BINARY_DIR}
+            COMMAND ./unittest.sh "qmlui" ${CMAKE_CURRENT_BINARY_DIR}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
     endif()
 else()
     if(WIN32)
        add_custom_target(unittests
-            COMMAND unittest_cmake.bat "ui" ${CMAKE_CURRENT_BINARY_DIR}
+            COMMAND unittest.bat "ui" ${CMAKE_CURRENT_BINARY_DIR}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
     else()
        add_custom_target(unittests
-            COMMAND ./unittest_cmake.sh "ui" ${CMAKE_CURRENT_BINARY_DIR}
+            COMMAND ./unittest.sh "ui" ${CMAKE_CURRENT_BINARY_DIR}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
     endif()
@@ -129,12 +127,12 @@ if(WIN32)
 else()
     if(qmlui)
        add_custom_target(coverage
-            COMMAND ./coverage_cmake.sh "qmlui"
+            COMMAND ./coverage.sh "qmlui"
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
     else()
        add_custom_target(coverage
-            COMMAND ./coverage_cmake.sh "ui"
+            COMMAND ./coverage.sh "ui"
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
     endif()

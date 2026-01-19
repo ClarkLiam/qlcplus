@@ -19,6 +19,7 @@
 
 #include <QQmlContext>
 
+#include "waveformimageprovider.h"
 #include "showmanager.h"
 #include "sequence.h"
 #include "tardis.h"
@@ -43,6 +44,12 @@ ShowManager::ShowManager(QQuickView *view, Doc *doc, QObject *parent)
     qmlRegisterType<Track>("org.qlcplus.classes", 1, 0, "Track");
     qmlRegisterUncreatableType<ShowFunction>("org.qlcplus.classes", 1, 0, "ShowFunction", "Can't create a ShowFunction");
 
+
+    /* Create and register a Waveform image provider */
+    m_waveformProvider = new WaveformImageProvider(doc);
+    view->engine()->addImageProvider(QLatin1String("waveform"), m_waveformProvider);
+    view->rootContext()->setContextProperty("waveformProvider", m_waveformProvider);
+
     setContextResource("qrc:/ShowManager.qml");
     setContextTitle(tr("Show Manager"));
 }
@@ -51,6 +58,9 @@ void ShowManager::initialize()
 {
     App *app = qobject_cast<App *>(m_view);
     m_tickSize = app->pixelDensity() * 18;
+
+    if (m_waveformProvider)
+        m_waveformProvider->setPixelDensity(app->pixelDensity());
 
     siComponent = new QQmlComponent(m_view->engine(), QUrl("qrc:/ShowItem.qml"));
     if (siComponent->isError())
@@ -207,8 +217,15 @@ void ShowManager::setTimeScale(float timeScale)
     m_timeScale = timeScale;
     float tickScale = timeDivision() == Show::Time ? 1.0 : timeScale;
 
-    App *app = qobject_cast<App *>(m_view);
-    m_tickSize = app->pixelDensity() * (18 * tickScale);
+    if (m_detached)
+    {
+        m_tickSize = pixelDensity() * (18 * tickScale);
+    }
+    else
+    {
+        App *app = qobject_cast<App *>(m_view);
+        m_tickSize = app->pixelDensity() * (18 * tickScale);
+    }
 
     emit tickSizeChanged(m_tickSize);
     emit timeScaleChanged(timeScale);
@@ -239,11 +256,10 @@ void ShowManager::setCurrentTime(int currentTime)
 
 QVariant ShowManager::tracks()
 {
-    m_tracksList.clear();
     if (m_currentShow)
-        m_tracksList = m_currentShow->tracks();
+        return QVariant::fromValue(m_currentShow->tracks());
 
-    return QVariant::fromValue(m_tracksList);
+    return QVariant();
 }
 
 int ShowManager::selectedTrackIndex() const
@@ -553,9 +569,13 @@ void ShowManager::resetContents()
 {
     resetView();
     m_currentTime = 0;
-    m_selectedTrackIndex = -1;
     emit currentTimeChanged(m_currentTime);
+
+    m_selectedTrackIndex = -1;
     m_currentShow = nullptr;
+
+    emit tracksChanged();
+    emit isEditingChanged();
 }
 
 void ShowManager::resetView()
@@ -861,8 +881,8 @@ void ShowManager::pasteFromClipboard()
             lowerTime = item.m_showFunc->startTime();
     }
 
-    // now clone and add Functions and ShowFunctions on the proper tracks
-    // and keeping the delta time of the original items
+    // now add the ShowFunctions on the proper tracks
+    // while keeping the delta time of the original items
     for (SelectedShowItem item : m_clipboard)
     {
         Track *track = m_currentShow->tracks().at(item.m_trackIndex);
@@ -874,34 +894,19 @@ void ShowManager::pasteFromClipboard()
         if (func == nullptr)
             continue;
 
-        Function *copyFunc = func->createCopy(m_doc);
-        if (copyFunc == nullptr)
-            continue;
-
-        copyFunc->setName(QString("%1 %2").arg(copyFunc->name()).arg(tr("(Copy)")));
-
-        if (copyFunc->type() == Function::SequenceType)
+        if (func->type() == Function::SequenceType)
         {
-            Sequence *sequence = qobject_cast<Sequence*>(copyFunc);
+            Sequence *sequence = qobject_cast<Sequence*>(func);
             Scene *scene = qobject_cast<Scene*>(m_doc->function(sequence->boundSceneID()));
             if (scene == nullptr)
                 continue;
 
-            Scene *copyScene = static_cast<Scene*>(scene->createCopy(m_doc, true));
-            if (copyScene == nullptr)
-                continue;
-
-            copyScene->setName(QString("%1 %2").arg(copyScene->name()).arg(tr("(Copy)")));
-
-            m_doc->addFunction(copyScene);
-            sequence->setBoundSceneID(copyScene->id());
+            sequence->setBoundSceneID(scene->id());
         }
-
-        m_doc->addFunction(copyFunc);
 
         addItems(contextItem(), item.m_trackIndex,
                  m_currentTime + item.m_showFunc->startTime() - lowerTime,
-                 QVariantList() << copyFunc->id());
+                 QVariantList() << func->id());
     }
 }
 

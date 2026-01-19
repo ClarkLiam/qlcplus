@@ -50,7 +50,7 @@ class Tardis;
 
 #define KXMLQLCWorkspace QStringLiteral("Workspace")
 
-class App : public QQuickView
+class App final : public QQuickView
 {
     Q_OBJECT
     Q_DISABLE_COPY(App)
@@ -175,9 +175,12 @@ public:
 
     bool is3DSupported() const;
 
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
     Q_INVOKABLE void aboutQt();
 
-    Q_INVOKABLE void exit();
+    Q_INVOKABLE void exit(bool force = false);
 
 public slots:
     void setAccessMask(int mask);
@@ -199,6 +202,9 @@ signals:
     void accessMaskChanged(int mask);
 
 private:
+    /** Flag to quit the application forcefully */
+    bool m_forceQuit = false;
+
     /** The number of pixels in one millimeter */
     qreal m_pixelDensity;
 

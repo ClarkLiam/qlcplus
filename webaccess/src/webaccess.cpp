@@ -167,7 +167,7 @@ void WebAccess::slotHandleHTTPRequest(QHttpRequest *req, QHttpResponse *resp)
 
         QByteArray postReply =
                 QString("<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\" />\n"
-                "<script type=\"text/javascript\">\n" PROJECT_LOADED_JS
+                "<script>\n" PROJECT_LOADED_JS
                 "</script></head><body style=\"background-color: #45484d;\">"
                 "<div style=\"position: absolute; width: 100%; height: 30px; top: 50%; background-color: #888888;"
                 "text-align: center; font:bold 24px/1.2em sans-serif;\">"
@@ -206,7 +206,7 @@ void WebAccess::slotHandleHTTPRequest(QHttpRequest *req, QHttpResponse *resp)
 
         QByteArray postReply =
                       QString("<html><head>\n<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\" />\n"
-                      "<script type=\"text/javascript\">\n"
+                      "<script>\n"
                       " alert(\"" + tr("Fixture stored and loaded") + "\");"
                       " window.location = \"/config\"\n"
                       "</script></head></html>").toUtf8();
@@ -264,50 +264,50 @@ void WebAccess::slotHandleHTTPRequest(QHttpRequest *req, QHttpResponse *resp)
                     .arg(QDir::separator()).arg(reqUrl.mid(1));
             }
         }
-        if (sendFile(resp, localFilePath, "image/png") == true)
+        if (sendFile(resp, localFilePath, "image/png"))
             return;
     }
     else if (reqUrl.endsWith(".jpg") || reqUrl.endsWith(".jpeg"))
     {
-        if (sendFile(resp, reqUrl, "image/jpg") == true)
+        if (sendFile(resp, reqUrl, "image/jpg"))
             return;
     }
     else if (reqUrl.endsWith(".bmp"))
     {
-        if (sendFile(resp, reqUrl, "image/bmp") == true)
+        if (sendFile(resp, reqUrl, "image/bmp"))
             return;
     }
     else if (reqUrl.endsWith(".svg"))
     {
-        if (sendFile(resp, reqUrl, "image/svg+xml") == true)
+        if (sendFile(resp, reqUrl, "image/svg+xml"))
             return;
     }
     else if (reqUrl.endsWith(".ico"))
     {
         QString clUri = reqUrl.mid(1);
         if (sendFile(resp, QString("%1%2%3").arg(QLCFile::systemDirectory(WEBFILESDIR).path())
-                     .arg(QDir::separator()).arg(clUri), "image/x-icon") == true)
+                     .arg(QDir::separator()).arg(clUri), "image/x-icon"))
             return;
     }
     else if (reqUrl.endsWith(".css"))
     {
         QString clUri = reqUrl.mid(1);
         if (sendFile(resp, QString("%1%2%3").arg(QLCFile::systemDirectory(WEBFILESDIR).path())
-                     .arg(QDir::separator()).arg(clUri), "text/css") == true)
+                     .arg(QDir::separator()).arg(clUri), "text/css"))
             return;
     }
     else if (reqUrl.endsWith(".js"))
     {
         QString clUri = reqUrl.mid(1);
         if (sendFile(resp, QString("%1%2%3").arg(QLCFile::systemDirectory(WEBFILESDIR).path())
-                     .arg(QDir::separator()).arg(clUri), "text/javascript") == true)
+                     .arg(QDir::separator()).arg(clUri), "text/javascript"))
             return;
     }
     else if (reqUrl.endsWith(".html"))
     {
         QString clUri = reqUrl.mid(1);
         if (sendFile(resp, QString("%1%2%3").arg(QLCFile::systemDirectory(WEBFILESDIR).path())
-                     .arg(QDir::separator()).arg(clUri), "text/html") == true)
+                     .arg(QDir::separator()).arg(clUri), "text/html"))
             return;
     }
     else if (reqUrl != "/")
@@ -492,7 +492,7 @@ void WebAccess::slotHandleWebSocketRequest(QHttpConnection *conn, QString data)
         if (cmdList.at(1) == "NETWORK")
         {
             QString wsMessage;
-            if (m_netConfig->updateNetworkSettings(cmdList) == true)
+            if (m_netConfig->updateNetworkSettings(cmdList))
                 wsMessage = QString("ALERT|" + tr("Network configuration changed. Reboot to apply the changes."));
             else
                 wsMessage = QString("ALERT|" + tr("An error occurred while updating the network configuration."));
@@ -510,7 +510,7 @@ void WebAccess::slotHandleWebSocketRequest(QHttpConnection *conn, QString data)
 
             if (enable)
             {
-                if (m_netConfig->createWiFiHotspot(cmdList.at(3), cmdList.at(4)) == true)
+                if (m_netConfig->createWiFiHotspot(cmdList.at(3), cmdList.at(4)))
                     wsMessage = QString("ALERT|" + tr("Wi-Fi hotspot successfully activated."));
                 else
                     wsMessage = QString("ALERT|" + tr("An error occurred while creating a Wi-Fi hotspot."));
@@ -656,6 +656,74 @@ void WebAccess::slotHandleWebSocketRequest(QHttpConnection *conn, QString data)
             else
                 wsAPIMessage.append(QString("%1|%2").arg(wID).arg(widget->typeToString(VCWidget::UnknownWidget)));
         }
+        else if (apiCmd == "getWidgetFunction")
+        {
+            if (cmdList.count() < 3)
+                return;
+
+            quint32 wID = cmdList[2].toUInt();
+            VCWidget *widget = m_vc->widget(wID);
+
+            // Always return 4 fields after the command:
+            // <widgetId>|<functionId>|<functionType>|<functionName>
+            wsAPIMessage.append(QString("%1|").arg(wID));
+
+            quint32 fID = 0;
+
+            if (widget != NULL)
+            {
+                switch (widget->type())
+                {
+                    case VCWidget::ButtonWidget:
+                    {
+                        VCButton *button = qobject_cast<VCButton*>(widget);
+                        if (button != NULL)
+                        {
+                            quint32 candidate = button->function();
+                            if (candidate != Function::invalidId())
+                                fID = candidate;
+                        }
+                    }
+                    break;
+
+                    case VCWidget::CueListWidget:
+                    {
+                        VCCueList *cue = qobject_cast<VCCueList*>(widget);
+                        if (cue != NULL)
+                        {
+                            quint32 candidate = cue->chaserID();
+                            if (candidate != Function::invalidId())
+                                fID = candidate;
+                        }
+                    }
+                    break;
+
+                    case VCWidget::SliderWidget:
+                    {
+                        VCSlider *slider = qobject_cast<VCSlider*>(widget);
+                        if (slider != NULL)
+                        {
+                            if (slider->sliderMode() == VCSlider::Playback)
+                            {
+                                quint32 candidate = slider->playbackFunction();
+                                if (candidate != Function::invalidId())
+                                    fID = candidate;
+                            }
+                        }
+                    }
+                    break;
+
+                    default:
+                        break;
+                }
+            }
+
+            Function *f = (fID != 0) ? m_doc->function(fID) : NULL;
+            if (f != NULL)
+                wsAPIMessage.append(QString("%1|%2|%3").arg(f->id()).arg(f->typeString()).arg(f->name()));
+            else
+                wsAPIMessage.append(QString("0|%1|").arg(Function::typeToString(Function::Undefined)));
+        }
         else if (apiCmd == "getWidgetStatus")
         {
             if (cmdList.count() < 3)
@@ -726,7 +794,7 @@ void WebAccess::slotHandleWebSocketRequest(QHttpConnection *conn, QString data)
                     VCMatrix *animation = qobject_cast<VCMatrix*>(widget);
 
                     QMapIterator <quint32,QString> it(animation->customControlsMap());
-                    while (it.hasNext() == true)
+                    while (it.hasNext())
                     {
                         it.next();
                         wsAPIMessage.append(QString("%1|%2|").arg(it.key()).arg(it.value()));
@@ -740,7 +808,7 @@ void WebAccess::slotHandleWebSocketRequest(QHttpConnection *conn, QString data)
                     VCXYPad *xypad = qobject_cast<VCXYPad*>(widget);
 
                     QMapIterator <quint32,QString> it(xypad->presetsMap());
-                    while (it.hasNext() == true)
+                    while (it.hasNext())
                     {
                         it.next();
                         wsAPIMessage.append(QString("%1|%2|").arg(it.key()).arg(it.value()));
@@ -825,7 +893,7 @@ void WebAccess::slotHandleWebSocketRequest(QHttpConnection *conn, QString data)
     else if (cmdList[0] == "POLL")
         return;
 
-    if (data.contains("|") == false)
+    if (!data.contains("|"))
         return;
 
     if (m_auth && user && user->level < VC_ONLY_LEVEL)
@@ -975,7 +1043,7 @@ bool WebAccess::sendFile(QHttpResponse *response, QString filename, QString cont
 #if defined(WIN32) || defined(Q_OS_WIN)
     // If coming from a Windows hack, restore a path like
     // /c//tmp/pic.jpg back to C:\tmp\pic.jpg
-    if (resFile.exists() == false)
+    if (!resFile.exists())
     {
         filename.remove(0, 1);
         filename.replace("//", ":\\");
@@ -1951,10 +2019,10 @@ QString WebAccess::getClockHTML(VCClock *clock)
     }
     else
     {
-        str += " vcclock\" href=\"javascript:void(0)\"";
+        str += " vcclock\"";
     }
 
-    str +=  "style=\"width: " + QString::number(clock->width()) + "px; ";
+    str +=  " style=\"width: " + QString::number(clock->width()) + "px; ";
 
     if (m_doc->mode() != Doc::Design)
         str += "border: none!important; ";
@@ -1996,53 +2064,13 @@ void WebAccess::slotMatrixSliderValueChanged(int value)
     sendWebSocketMessage(wsMessage);
 }
 
-void WebAccess::slotMatrixColor1Changed()
+void WebAccess::slotMatrixColorChanged(int index)
 {
     VCMatrix *matrix = qobject_cast<VCMatrix *>(sender());
-    if (matrix == NULL)
+    if ((matrix == NULL) || (index < 1) || (index > 5))
         return;
 
-    QString wsMessage = QString("%1|MATRIX_COLOR_1|%2").arg(matrix->id()).arg(matrix->mtxColor(0).name());
-    sendWebSocketMessage(wsMessage.toUtf8());
-}
-
-void WebAccess::slotMatrixColor2Changed()
-{
-    VCMatrix *matrix = qobject_cast<VCMatrix *>(sender());
-    if (matrix == NULL)
-        return;
-
-    QString wsMessage = QString("%1|MATRIX_COLOR_2|%2").arg(matrix->id()).arg(matrix->mtxColor(1).name());
-    sendWebSocketMessage(wsMessage.toUtf8());
-}
-
-void WebAccess::slotMatrixColor3Changed()
-{
-    VCMatrix *matrix = qobject_cast<VCMatrix *>(sender());
-    if (matrix == NULL)
-        return;
-
-    QString wsMessage = QString("%1|MATRIX_COLOR_3|%2").arg(matrix->id()).arg(matrix->mtxColor(2).name());
-    sendWebSocketMessage(wsMessage.toUtf8());
-}
-
-void WebAccess::slotMatrixColor4Changed()
-{
-    VCMatrix *matrix = qobject_cast<VCMatrix *>(sender());
-    if (matrix == NULL)
-        return;
-
-    QString wsMessage = QString("%1|MATRIX_COLOR_4|%2").arg(matrix->id()).arg(matrix->mtxColor(3).name());
-    sendWebSocketMessage(wsMessage.toUtf8());
-}
-
-void WebAccess::slotMatrixColor5Changed()
-{
-    VCMatrix *matrix = qobject_cast<VCMatrix *>(sender());
-    if (matrix == NULL)
-        return;
-
-    QString wsMessage = QString("%1|MATRIX_COLOR_5|%2").arg(matrix->id()).arg(matrix->mtxColor(4).name());
+    QString wsMessage = QString("%1|MATRIX_COLOR_%2|%3").arg(matrix->id()).arg(index).arg(matrix->mtxColor(index-1).name());
     sendWebSocketMessage(wsMessage.toUtf8());
 }
 
@@ -2082,8 +2110,8 @@ QString WebAccess::getMatrixHTML(VCMatrix *matrix)
                 "id=\"msl" + QString::number(matrix->id()) + "\" "
                 "oninput=\"matrixSliderValueChange(" + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixSliderValueChange(" + QString::number(matrix->id()) + ");\" "
                 "style=\"width: " + QString::number(matrix->height() - 20) + "px; "
-                "margin-top: " + QString::number(matrix->height() - 10) + "px; margin-left: 25px; \""
-                "min=\"1\" max=\"255\" step=\"1\" value=\"" + QString::number(matrix->sliderValue()) + "\">\n";
+                "margin-top: " + QString::number(matrix->height() - 10) + "px; margin-left: 25px;\" "
+                "min=\"0\" max=\"255\" step=\"1\" value=\"" + QString::number(matrix->sliderValue()) + "\">\n";
         str +=  "</div>";
     }
     str +=  "<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: space-around; height: 100%; width: 100%; margin: 8px; \">";
@@ -2093,27 +2121,27 @@ QString WebAccess::getMatrixHTML(VCMatrix *matrix)
     str += "<div style=\"display: flex; flex-direction: row; align-items: center; justify-content: space-around; width: 100%; margin-top: 4px; margin-bottom: 4px; \">";
     if (matrix->visibilityMask() & VCMatrix::Visibility::ShowColor1Button) {
         str += "<input type=\"color\" id=\"mc1i"+QString::number(matrix->id())+"\" class=\"vMatrix\" value=\""+(matrix->mtxColor(0).name())+"\" "
-               "oninput=\"matrixColor1Change(" + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColor1Change(" + QString::number(matrix->id()) + ");\" "
+               "oninput=\"matrixColorChanged(1, " + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColorChanged(1, " + QString::number(matrix->id()) + ");\" "
                " />";
     }
     if (matrix->visibilityMask() & VCMatrix::Visibility::ShowColor2Button) {
         str += "<input type=\"color\" id=\"mc2i"+QString::number(matrix->id())+"\" class=\"vMatrix\" value=\""+(matrix->mtxColor(1).name())+"\" "
-               "oninput=\"matrixColor2Change(" + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColor2Change(" + QString::number(matrix->id()) + ");\" "
+               "oninput=\"matrixColorChanged(2, " + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColorChanged(2, " + QString::number(matrix->id()) + ");\" "
                " />";
     }
     if (matrix->visibilityMask() & VCMatrix::Visibility::ShowColor3Button) {
         str += "<input type=\"color\" id=\"mc3i"+QString::number(matrix->id())+"\" class=\"vMatrix\" value=\""+(matrix->mtxColor(2).name())+"\" "
-               "oninput=\"matrixColor3Change(" + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColor3Change(" + QString::number(matrix->id()) + ");\" "
+               "oninput=\"matrixColorChanged(3, " + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColorChanged(3, " + QString::number(matrix->id()) + ");\" "
                " />";
     }
     if (matrix->visibilityMask() & VCMatrix::Visibility::ShowColor4Button) {
         str += "<input type=\"color\" id=\"mc4i"+QString::number(matrix->id())+"\" class=\"vMatrix\" value=\""+(matrix->mtxColor(3).name())+"\" "
-               "oninput=\"matrixColor4Change(" + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColor4Change(" + QString::number(matrix->id()) + ");\" "
+               "oninput=\"matrixColorChanged(4, " + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColorChanged(4, " + QString::number(matrix->id()) + ");\" "
                " />";
     }
     if (matrix->visibilityMask() & VCMatrix::Visibility::ShowColor5Button) {
         str += "<input type=\"color\" id=\"mc5i"+QString::number(matrix->id())+"\" class=\"vMatrix\" value=\""+(matrix->mtxColor(4).name())+"\" "
-               "oninput=\"matrixColor5Change(" + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColor5Change(" + QString::number(matrix->id()) + ");\" "
+               "oninput=\"matrixColorChanged(5, " + QString::number(matrix->id()) + ");\" ontouchmove=\"matrixColorChanged(5, " + QString::number(matrix->id()) + ");\" "
                " />";
     }
     str += "</div>";
@@ -2222,10 +2250,8 @@ QString WebAccess::getMatrixHTML(VCMatrix *matrix)
 
     connect(matrix, SIGNAL(sliderValueChanged(int)),
             this, SLOT(slotMatrixSliderValueChanged(int)));
-    connect(matrix, SIGNAL(startColorChanged()),
-            this, SLOT(slotMatrixStartColorChanged()));
-    connect(matrix, SIGNAL(endColorChanged()),
-            this, SLOT(slotMatrixEndColorChanged()));
+    connect(matrix, SIGNAL(mtxColorChanged(int)),
+            this, SLOT(slotMatrixColorChanged(int)));
     connect(matrix, SIGNAL(animationValueChanged(QString)),
             this, SLOT(slotMatrixAnimationValueChanged(QString)));
 
@@ -2243,7 +2269,7 @@ QString WebAccess::getChildrenHTML(VCWidget *frame, int pagesNum, int currentPag
     if (lframe == NULL)
         return "";
 
-    if (lframe->multipageMode() == true)
+    if (lframe->multipageMode())
     {
         for (int i = 0; i < pagesNum; i++)
         {
@@ -2268,7 +2294,7 @@ QString WebAccess::getChildrenHTML(VCWidget *frame, int pagesNum, int currentPag
         QString str;
         bool restoreDisable = false;
 
-        if (pagesNum > 0 && widget->isEnabled() == false)
+        if (pagesNum > 0 && !widget->isEnabled())
         {
             widget->setEnabled(true);
             restoreDisable = true;
@@ -2307,7 +2333,7 @@ QString WebAccess::getChildrenHTML(VCWidget *frame, int pagesNum, int currentPag
                 str = getWidgetHTML(widget);
             break;
         }
-        if (lframe->multipageMode() == true && pagesNum > 0)
+        if (lframe->multipageMode() && pagesNum > 0)
         {
             if (widget->page() < pagesHTML.count())
             {
@@ -2396,9 +2422,9 @@ QString WebAccess::getVCHTML()
 {
     m_CSScode = "<link href=\"common.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\">\n";
     m_CSScode += "<link href=\"virtualconsole.css\" rel=\"stylesheet\" type=\"text/css\" media=\"screen\">\n";
-    m_JScode = "<script type=\"text/javascript\" src=\"virtualconsole.js\"></script>\n"
-               "<script type=\"text/javascript\" src=\"websocket.js\"></script>\n"
-               "<script type=\"text/javascript\">\n";
+    m_JScode = "<script src=\"virtualconsole.js\"></script>\n"
+               "<script src=\"websocket.js\"></script>\n"
+               "<script>\n";
 
     VCFrame *mainFrame = m_vc->contents();
     QSize mfSize = mainFrame->size();

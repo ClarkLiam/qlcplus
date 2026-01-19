@@ -33,15 +33,16 @@ EditorView::EditorView(QQuickView *view, int id, QLCFixtureDef *fixtureDef, QObj
     : QObject(parent)
     , m_view(view)
     , m_id(id)
-    , m_fixtureDef(fixtureDef)
     , m_channelEdit(nullptr)
     , m_modeEdit(nullptr)
     , m_isModified(false)
 {
+    m_fixtureDef = new QLCFixtureDef(fixtureDef);
+
     m_globalPhy = new PhysicalEdit(m_fixtureDef->physical(), this);
     connect(m_globalPhy, SIGNAL(changed()), this, SLOT(setModified()));
 
-    m_fileName = m_fixtureDef->definitionSourceFile();
+    m_fileName = fixtureDef->definitionSourceFile();
     qDebug() << "Editing fixture on file:" << m_fileName;
 
     m_channelList = new ListModel(this);
@@ -64,11 +65,8 @@ EditorView::~EditorView()
     delete m_channelList;
     delete m_globalPhy;
 
-    if (m_channelEdit)
-        delete m_channelEdit;
-
-    if (m_modeEdit)
-        delete m_modeEdit;
+    dismissChannelEditor();
+    dismissModeEditor();
 }
 
 int EditorView::id() const
@@ -84,6 +82,18 @@ QLCFixtureDef *EditorView::fixtureDefinition()
 bool EditorView::isUser() const
 {
     return m_fixtureDef->isUser();
+}
+
+void EditorView::remapFilename(QString userFolder)
+{
+    if (!isUser())
+    {
+        const QString file = QFileInfo(m_fileName).fileName();
+        m_fileName = QDir(userFolder).filePath(file);
+        m_fixtureDef->setIsUser(true);
+        m_fixtureDef->setDefinitionSourceFile(m_fileName);
+        qDebug() << "Definition name remapped to" << m_fileName;
+    }
 }
 
 int EditorView::productType() const
@@ -195,13 +205,15 @@ ChannelEdit *EditorView::requestChannelEditor(QString name)
     if (ch == nullptr)
     {
         ch = new QLCChannel();
-        QQmlEngine::setObjectOwnership(ch, QQmlEngine::CppOwnership);
         ch->setName(tr("New channel %1").arg(m_fixtureDef->channels().count() + 1));
         m_fixtureDef->addChannel(ch);
         updateChannelList();
         setModified(true);
     }
+    QQmlEngine::setObjectOwnership(ch, QQmlEngine::CppOwnership);
+
     m_channelEdit = new ChannelEdit(ch);
+    QQmlEngine::setObjectOwnership(m_channelEdit, QQmlEngine::CppOwnership);
     connect(m_channelEdit, SIGNAL(channelChanged()), this, SLOT(setModified()));
     connect(m_channelEdit, SIGNAL(capabilitiesChanged()), this, SLOT(setModified()));
     return m_channelEdit;
@@ -447,6 +459,7 @@ QString EditorView::save()
         return tr("Could not save file! (%1)").arg(QLCFile::errorString(error));
 
     setModified(false);
+    emit definitionSaved(m_fixtureDef);
     return errors;
 }
 

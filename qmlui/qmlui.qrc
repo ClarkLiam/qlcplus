@@ -16,6 +16,7 @@
     <file alias="ContextMenuEntry.qml">qml/ContextMenuEntry.qml</file>
     <file alias="CustomCheckBox.qml">qml/CustomCheckBox.qml</file>
     <file alias="CustomComboBox.qml">qml/CustomComboBox.qml</file>
+    <file alias="CustomRangeSlider.qml">qml/CustomRangeSlider.qml</file>
     <file alias="CustomScrollBar.qml">qml/CustomScrollBar.qml</file>
     <file alias="CustomSlider.qml">qml/CustomSlider.qml</file>
     <file alias="CustomSpinBox.qml">qml/CustomSpinBox.qml</file>
@@ -239,12 +240,13 @@
     <file alias="VCSliderProperties.qml">qml/virtualconsole/VCSliderProperties.qml</file>
     <file alias="VCAnimationItem.qml">qml/virtualconsole/VCAnimationItem.qml</file>
     <file alias="VCAnimationProperties.qml">qml/virtualconsole/VCAnimationProperties.qml</file>
-    <file alias="VCAudioTriggerItem.qml">qml/virtualconsole/VCAudioTriggerItem.qml</file>
-    <file alias="VCAudioTriggerProperties.qml">qml/virtualconsole/VCAudioTriggerProperties.qml</file>
+    <file alias="VCAudioTriggersItem.qml">qml/virtualconsole/VCAudioTriggersItem.qml</file>
+    <file alias="VCAudioTriggersProperties.qml">qml/virtualconsole/VCAudioTriggersProperties.qml</file>
     <file alias="VCXYPadItem.qml">qml/virtualconsole/VCXYPadItem.qml</file>
     <file alias="VCXYPadProperties.qml">qml/virtualconsole/VCXYPadProperties.qml</file>
     <file alias="VCSpeedDialItem.qml">qml/virtualconsole/VCSpeedDialItem.qml</file>
     <file alias="VCSpeedDialProperties.qml">qml/virtualconsole/VCSpeedDialProperties.qml</file>
+    <file alias="VCSpeedDialPresets.qml">qml/virtualconsole/VCSpeedDialPresets.qml</file>
     <file alias="VCClockItem.qml">qml/virtualconsole/VCClockItem.qml</file>
     <file alias="VCClockProperties.qml">qml/virtualconsole/VCClockProperties.qml</file>
     <file alias="VCCueListItem.qml">qml/virtualconsole/VCCueListItem.qml</file>

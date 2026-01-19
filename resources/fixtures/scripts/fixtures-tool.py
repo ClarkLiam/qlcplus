@@ -10,6 +10,7 @@ import sys
 import os
 import re
 import argparse
+import csv
 import lxml.etree as etree
 
 singleCapCount = 0
@@ -318,7 +319,7 @@ def getDefinitionVersion(xmlObj):
     else:
         version_tag = creator_tag.find('{' + namespace + '}Version')
 
-        numversion_tok = re.findall('\d+', version_tag.text)
+        numversion_tok = re.findall(r'\d+', version_tag.text)
         #print("Definition version: " + version_tag.text)
 
         # extract a unified number from the QLC version string
@@ -610,6 +611,24 @@ def validate_fx_channels(absname, xmlObj, errNum, colorRgb):
             else:
                 groupByte = group_tag.attrib['Byte']
 
+        # Extra semantic hints to align with PHP validator
+        #lname = chName.lower()
+        #if group_tag is not None and group_tag.text and qlc_version >= 41207:
+        #    # strobe -> Shutter
+        #    if 'strobe' in lname and '/' not in lname and group_tag.text != 'Shutter':
+        #        print(absname + ":" + chName + ": group should be set to 'Shutter'")
+        #        errNum += 1
+        #    # speed -> Speed
+        #    if 'speed' in lname and '/' not in lname and group_tag.text != 'Speed':
+        #        print(absname + ":" + chName + ": group should be set to 'Speed'")
+        #        errNum += 1
+        # color channel names shouldn't use group 'Colour'
+        #def _is_color(n):
+        #    return any(c in n for c in ['red','green','blue','cyan','magenta','yellow','amber','white','uv','lime','indigo'])
+        #if _is_color(lname) and group_tag.text == 'Colour':
+        #    print(absname + ":" + chName + ": group should be 'Intensity' with proper Color")
+        #    errNum += 1
+
         if chPreset:
             if chPreset == "PositionPan" or chPreset == "PositionPanFine" or chPreset == "PositionXAxis":
                 hasPan = True
@@ -867,6 +886,51 @@ def get_validation_files(path):
     return files
 
 ###########################################################################################
+# createFixturesReport
+#
+# Creates a CSV report with basic fixture data for each mode
+#
+# paths: list of paths to scan for fixtures
+# reportFile: output CSV file name
+###########################################################################################
+
+def createFixturesReport(paths, reportFile):
+    global namespace
+
+    files = []
+    for path in paths:
+        files += get_validation_files(path)
+
+    if (sys.version_info >= (3, 0)):
+        csvFile = open(reportFile, "w", newline='')
+    else:
+        csvFile = open(reportFile, "wb")
+
+    writer = csv.writer(csvFile)
+    writer.writerow(["manufacturer", "model", "type", "mode", "channels", "heads number"])
+
+    for absname in files:
+        parser = etree.XMLParser(ns_clean=True, recover=True)
+        xmlObj = etree.parse(absname, parser=parser)
+        root = xmlObj.getroot()
+
+        manuf_tag = root.find('{' + namespace + '}Manufacturer')
+        model_tag = root.find('{' + namespace + '}Model')
+        type_tag = root.find('{' + namespace + '}Type')
+        manufacturer = manuf_tag.text if manuf_tag is not None and manuf_tag.text else ""
+        model = model_tag.text if model_tag is not None and model_tag.text else ""
+        fixture_type = type_tag.text if type_tag is not None and type_tag.text else ""
+
+        for mode in root.findall('{' + namespace + '}Mode'):
+            mode_name = mode.attrib.get('Name', '')
+            mode_channels = len(mode.findall('{' + namespace + '}Channel'))
+            mode_heads = len(mode.findall('{' + namespace + '}Head'))
+            writer.writerow([manufacturer, model, fixture_type, mode_name, mode_channels, mode_heads])
+
+    csvFile.close()
+    print("Report written to " + reportFile)
+
+###########################################################################################
 #
 #                                       MAIN
 #
@@ -878,6 +942,8 @@ parser.add_argument('--convert <source> <destination>', help='Convert an "old" s
                     nargs='*', dest='convert')
 parser.add_argument('--validate [<path> ...]', help='Validate fixtures in the specified path',
                     nargs='*', dest='validate')
+parser.add_argument('--report [<path> ...]', help='Create a CSV report for fixtures in the specified path',
+                    nargs='*', dest='report')
 args = parser.parse_args()
 
 print(args)
@@ -944,3 +1010,8 @@ if args.validate is not None:
     if errorCount != 0:
         sys.exit(1)
 
+if args.report is not None:
+    paths = ["."]
+    if len(args.report) >= 1:
+        paths = args.report
+    createFixturesReport(paths, "FixturesReport.csv")

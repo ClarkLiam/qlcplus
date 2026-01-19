@@ -27,7 +27,7 @@ class RGBMatrix;
 class RGBMatrixStep;
 class FixtureGroup;
 
-class RGBMatrixEditor : public FunctionEditor
+class RGBMatrixEditor final : public FunctionEditor
 {
     Q_OBJECT
 
@@ -58,10 +58,12 @@ public:
     ~RGBMatrixEditor();
 
     /** Set the ID of the RGBMatrix to edit */
-    void setFunctionID(quint32 id);
+    void setFunctionID(quint32 id) override;
 
     int fixtureGroup() const;
     void setFixtureGroup(int fixtureGroup);
+
+    Q_INVOKABLE void saveToSequence();
 
 signals:
     void fixtureGroupChanged(int fixtureGroup);

@@ -27,33 +27,6 @@
 
 #define KXMLQLCVCSlider QStringLiteral("Slider")
 
-#define KXMLQLCVCSliderMode         QStringLiteral("SliderMode")
-#define KXMLQLCVCSliderWidgetStyle  QStringLiteral("WidgetStyle")
-
-#define KXMLQLCVCSliderValueDisplayStyle            QStringLiteral("ValueDisplayStyle")
-#define KXMLQLCVCSliderValueDisplayStyleExact       QStringLiteral("Exact")
-#define KXMLQLCVCSliderValueDisplayStylePercentage  QStringLiteral("Percentage")
-
-#define KXMLQLCVCSliderClickAndGoType QStringLiteral("ClickAndGoType")
-
-#define KXMLQLCVCSliderInvertedAppearance QStringLiteral("InvertedAppearance")
-
-#define KXMLQLCVCSliderLevel            QStringLiteral("Level")
-#define KXMLQLCVCSliderLevelLowLimit    QStringLiteral("LowLimit")
-#define KXMLQLCVCSliderLevelHighLimit   QStringLiteral("HighLimit")
-#define KXMLQLCVCSliderLevelValue       QStringLiteral("Value")
-#define KXMLQLCVCSliderLevelMonitor     QStringLiteral("Monitor")
-#define KXMLQLCVCSliderOverrideReset    QStringLiteral("Reset")
-#define KXMLQLCVCSliderFunctionFlash    QStringLiteral("Flash")
-
-#define KXMLQLCVCSliderChannel          QStringLiteral("Channel")
-#define KXMLQLCVCSliderChannelFixture   QStringLiteral("Fixture")
-
-#define KXMLQLCVCSliderPlayback             QStringLiteral("Playback") // LEGACY
-#define KXMLQLCVCSliderAdjust               QStringLiteral("Adjust")
-#define KXMLQLCVCSliderAdjustAttribute      QStringLiteral("Attribute")
-#define KXMLQLCVCSliderControlledFunction   QStringLiteral("Function")
-
 class FunctionParent;
 class GenericFader;
 
@@ -104,23 +77,23 @@ public:
     virtual ~VCSlider();
 
     /** @reimp */
-    QString defaultCaption();
+    QString defaultCaption() override;
 
     /** @reimp */
-    void setupLookAndFeel(qreal pixelDensity, int page);
+    void setupLookAndFeel(qreal pixelDensity, int page) override;
 
     /** @reimp */
-    void render(QQuickView *view, QQuickItem *parent);
+    void render(QQuickView *view, QQuickItem *parent) override;
 
     /** @reimp */
-    QString propertiesResource() const;
+    QString propertiesResource() const override;
 
     /** @reimp */
-    VCWidget *createCopy(VCWidget *parent);
+    VCWidget *createCopy(VCWidget *parent) override;
 
 protected:
     /** @reimp */
-    bool copyFrom(const VCWidget* widget);
+    bool copyFrom(const VCWidget* widget) override;
 
     /*********************************************************************
      * Widget style
@@ -396,7 +369,7 @@ public:
     qreal attributeMaxValue() const;
 
     /** @reimp */
-    void adjustIntensity(qreal val);
+    void adjustIntensity(qreal val) override;
 
 private:
     FunctionParent functionParent() const;
@@ -450,7 +423,7 @@ signals:
      *********************************************************************/
 public:
     /** @reimpl */
-    void writeDMX(MasterTimer* timer, QList<Universe*> universes);
+    void writeDMX(MasterTimer* timer, QList<Universe*> universes) override;
 
 protected:
     /** writeDMX for Level mode */
@@ -468,24 +441,24 @@ private:
      *********************************************************************/
 public:
     /** @reimp */
-    void updateFeedback();
+    void updateFeedback() override;
 
 public slots:
     /** @reimp */
-    void slotInputValueChanged(quint8 id, uchar value);
+    void slotInputValueChanged(quint8 id, uchar value) override;
 
     /*********************************************************************
      * Load & Save
      *********************************************************************/
 public:
     /** @reimp */
-    bool loadXML(QXmlStreamReader &root);
+    bool loadXML(QXmlStreamReader &root) override;
     bool loadXMLLevel(QXmlStreamReader &level_root);
     bool loadXMLAdjust(QXmlStreamReader &adj_root);
     bool loadXMLLegacyPlayback(QXmlStreamReader &pb_root);
 
     /** @reimp */
-    bool saveXML(QXmlStreamWriter *doc);
+    bool saveXML(QXmlStreamWriter *doc) override;
 };
 
 #endif

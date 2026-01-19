@@ -408,7 +408,10 @@ function setSliderDisableState(id, disable) {
 }
 
 function getPositionFromValue(val, id) {
-  var knobRect = document.getElementById("knob" + id).getBoundingClientRect();
+  var knob = document.getElementById("knob" + id);
+  if (!knob)
+    return;
+  var knobRect = knob.getBoundingClientRect();
   var pie = document.getElementById("pie" + id);
   var spot = document.getElementById("spot" + id);
   if (!knobRect || !pie || !spot) return;
@@ -608,59 +611,15 @@ function setMatrixComboValue(id, comboValue) {
   combo.value = comboValue;
 }
 
-function matrixColor1Change(id) {
-  var colorObj = document.querySelector("#mc1i" + id);
-  var colorMsg = id + "|MATRIX_COLOR_CHANGE|COLOR_1|" + hexToUint(colorObj.value);
-  websocket.send(colorMsg);
-}
-
-function setMatrixColor1Value(id, color) {
-  var combo = document.querySelector("#mc1i" + id);
+function setMatrixColorValue(idx, id, color) {
+  var combo = document.querySelector("#mc" + idx + "i" + id);
   combo.value = color;
 }
 
-function matrixColor2Change(id) {
-  var colorObj = document.querySelector("#mc2i" + id);
-  var colorMsg = id + "|MATRIX_COLOR_CHANGE|COLOR_2|" + hexToUint(colorObj.value);
+function matrixColorChanged(idx, id) {
+  var colorObj = document.querySelector("#mc" + idx + "i" + id);
+  var colorMsg = id + "|MATRIX_COLOR_CHANGE|COLOR_" + idx + "|" + hexToUint(colorObj.value);
   websocket.send(colorMsg);
-}
-
-function setMatrixColor2Value(id, color) {
-  var combo = document.querySelector("#mc2i" + id);
-  combo.value = color;
-}
-
-function matrixColor3Change(id) {
-  var colorObj = document.querySelector("#mc3i" + id);
-  var colorMsg = id + "|MATRIX_COLOR_CHANGE|COLOR_3|" + hexToUint(colorObj.value);
-  websocket.send(colorMsg);
-}
-
-function setMatrixColor3Value(id, color) {
-  var combo = document.querySelector("#mc3i" + id);
-  combo.value = color;
-}
-
-function matrixColor4Change(id) {
-  var colorObj = document.querySelector("#mc4i" + id);
-  var colorMsg = id + "|MATRIX_COLOR_CHANGE|COLOR_4|" + hexToUint(colorObj.value);
-  websocket.send(colorMsg);
-}
-
-function setMatrixColor4Value(id, color) {
-  var combo = document.querySelector("#mc4i" + id);
-  combo.value = color;
-}
-
-function matrixColor5Change(id) {
-  var colorObj = document.querySelector("#mc5i" + id);
-  var colorMsg = id + "|MATRIX_COLOR_CHANGE|COLOR_5|" + hexToUint(colorObj.value);
-  websocket.send(colorMsg);
-}
-
-function setMatrixColor5Value(id, color) {
-  var combo = document.querySelector("#mc5i" + id);
-  combo.value = color;
 }
 
 function getPositionFromValueForMatrix(val, id) {

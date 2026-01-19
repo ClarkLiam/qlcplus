@@ -60,7 +60,7 @@ GridLayout
                 colorPreview.secondary = editor.getCapabilityValueAt(capIndex, 1)
             break
             case QLCCapability.Picture:
-                goboPicture.source = "file://" + editor.getCapabilityValueAt(capIndex, 0)
+                goboPicture.source = "file:///" + editor.getCapabilityValueAt(capIndex, 0)
             break
             case QLCCapability.SingleValue:
                 pValueSpin.value = editor.getCapabilityValueAt(capIndex, 0)
@@ -379,7 +379,6 @@ GridLayout
                         height: 1
                         y: UISettings.listItemHeight - 1
                         color: UISettings.fgMedium
-
                     }
 
                     MouseArea
@@ -409,7 +408,7 @@ GridLayout
                 y: UISettings.listItemHeight
                 width: capsList.width
                 height: UISettings.listItemHeight
-                visible: false || capsList.count == 0
+                visible: false || capsList.count === 0
 
                 property QLCCapability editCap: null
                 property int indexInList: 0
@@ -513,12 +512,11 @@ GridLayout
                 id: capPresetCombo
                 Layout.fillWidth: true
                 model: editor ? editor.capabilityPresetList : null
-                onValueChanged:
-                    function (value)
-                    {
-                        editor.setCapabilityPresetAtIndex(editItem.indexInList, value)
-                        updatePresetBox(editItem.indexInList)
-                    }
+                onActivated: (index) =>
+                {
+                    editor.setCapabilityPresetAtIndex(editItem.indexInList, currValue)
+                    updatePresetBox(editItem.indexInList)
+                }
             }
 
             GroupBox

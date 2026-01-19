@@ -27,7 +27,7 @@ class QLCFixtureDef;
 class TreeModel;
 class Doc;
 
-class FixtureBrowser : public QObject
+class FixtureBrowser final : public QObject
 {
     Q_OBJECT
 
@@ -118,7 +118,7 @@ signals:
 
 private:
     void updateSearchTree();
-    QLCFixtureDef *fixtureDefinition();
+    QLCFixtureDef *fixtureDefinition() const;
 
 private:
     Doc *m_doc;

@@ -268,13 +268,16 @@ void VCCueList::setSideFaderLevel(int level)
             //qDebug() << "value:" << value << " new step:" << newStep << " stepSize:" << stepSize;
         }
 
+        if (newStep == ch->currentStepIndex())
+            return;
+
         ChaserAction action;
         action.m_action = ChaserSetStepIndex;
         action.m_stepIndex = newStep;
+        action.m_masterIntensity = intensity();
+        action.m_stepIntensity = getPrimaryIntensity();
+        action.m_fadeMode = getFadeMode();
         ch->setAction(action);
-
-        if (newStep == ch->currentStepIndex())
-            return;
     }
     else
     {
@@ -431,6 +434,18 @@ void VCCueList::setStepNote(int index, QString text)
 
     QModelIndex mIdx = m_stepsList->index(index, 0, QModelIndex());
     m_stepsList->setDataWithRole(mIdx, "note", text);
+}
+
+void VCCueList::notifyFunctionStarting(VCWidget *widget, quint32 fid, qreal fIntensity, bool excludeMonitored)
+{
+    Q_UNUSED(widget)
+    Q_UNUSED(fIntensity)
+    Q_UNUSED(excludeMonitored)
+
+    if (fid == m_chaserID)
+        return;
+
+    stopChaser();
 }
 
 quint32 VCCueList::chaserID() const
@@ -764,8 +779,7 @@ void VCCueList::stopClicked()
     }
     else
     {
-        //m_primaryIndex = 0;
-        //m_tree->setCurrentItem(m_tree->topLevelItem(getFirstIndex()));
+        setPlaybackIndex(-1);
     }
 }
 
@@ -890,7 +904,7 @@ void VCCueList::slotFunctionStopped(quint32 fid)
     if (fid == m_chaserID)
     {
         emit playbackStatusChanged();
-        setPlaybackIndex(-1);
+
         sendFeedback(0, INPUT_PLAY_PAUSE_ID, VCWidget::ExactValue);
 
         m_timer->stop();
