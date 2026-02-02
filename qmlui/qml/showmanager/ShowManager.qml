@@ -43,6 +43,7 @@ Rectangle
     property real xViewOffset: 0
 
     property int showID: showManager.currentShowID
+    property int selectedTrackIndex: -1
 
     onShowIDChanged: renderAndCenter()
     Component.onCompleted: renderAndCenter()
@@ -69,8 +70,8 @@ Rectangle
         z: 5
         gradient: Gradient
         {
-          GradientStop { position: 0; color: UISettings.toolbarStartSub }
-          GradientStop { position: 1; color: UISettings.toolbarEnd }
+            GradientStop { position: 0; color: UISettings.toolbarStartSub }
+            GradientStop { position: 1; color: UISettings.toolbarEnd }
         }
 
         RowLayout
@@ -355,6 +356,7 @@ Rectangle
         x: parent.width - width
         z: 5
         height: parent.height - (bottomPanel.visible ? bottomPanel.height : 0)
+        inShowManager: true
     }
 
     BottomPanel
@@ -381,7 +383,7 @@ Rectangle
 
             IconButton
             {
-                visible: showManager.selectedTrackIndex > 0 ? true : false
+                visible: selectedTrackIndex > 0 ? true : false
                 height: parent.height - 2
                 width: height
                 faSource: FontAwesome.fa_angle_up
@@ -389,15 +391,15 @@ Rectangle
                 tooltip: qsTr("Move the selected track up")
                 onClicked:
                 {
-                    showManager.moveTrack(showManager.selectedTrackIndex, -1)
-                    showManager.selectedTrackIndex--
+                    showManager.moveTrack(selectedTrackIndex, -1)
+                    selectedTrackIndex--
                     renderAndCenter()
                 }
             }
 
             IconButton
             {
-                visible: showManager.selectedTrackIndex < tracksBox.count - 1 ? true : false
+                visible: selectedTrackIndex < tracksBox.count - 1 ? true : false
                 height: parent.height - 2
                 width: height
                 faSource: FontAwesome.fa_angle_down
@@ -405,8 +407,8 @@ Rectangle
                 tooltip: qsTr("Move the selected track down")
                 onClicked:
                 {
-                    showManager.moveTrack(showManager.selectedTrackIndex, 1)
-                    showManager.selectedTrackIndex++
+                    showManager.moveTrack(selectedTrackIndex, 1)
+                    selectedTrackIndex++
                     renderAndCenter()
                 }
             }
@@ -511,8 +513,9 @@ Rectangle
                             width: tracksBox.width
                             height: trackHeight
                             trackRef: modelData
-                            trackIndex: index
-                            isSelected: showManager.selectedTrackIndex === index ? true : false
+                            isSelected: showMgrContainer.selectedTrackIndex === index ? true : false
+
+                            onTrackSelected: showMgrContainer.selectedTrackIndex = index
                         }
                 }
             }

@@ -39,6 +39,7 @@ class Track : public QObject
 {
     Q_OBJECT
 
+    Q_PROPERTY(quint32 id READ id CONSTANT)
     Q_PROPERTY(QString name READ name WRITE setName NOTIFY nameChanged)
     Q_PROPERTY(bool mute READ isMute WRITE setMute NOTIFY muteChanged)
 
@@ -165,9 +166,9 @@ public:
     bool postLoad(Doc *doc);
 
 public:
-    bool contains(Doc *doc, quint32 functionId);
+    bool contains(Doc *doc, quint32 functionId) const;
 
-    QList<quint32> components();
+    QList<quint32> components() const;
 
 };
 

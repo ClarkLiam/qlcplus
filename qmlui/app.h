@@ -93,8 +93,9 @@ public:
     };
     Q_ENUM(FileDialogOpModes)
 
-    enum DragItemTypes
+    enum DragItemType
     {
+        NoDragItem,
         GenericDragItem,
         FolderDragItem,
         FunctionDragItem,
@@ -104,9 +105,11 @@ public:
         ChannelDragItem,
         PaletteDragItem,
         HeadDragItem,
+        ShowDragItem,
+        TrackDragItem,
         WidgetDragItem
     };
-    Q_ENUM(DragItemTypes)
+    Q_ENUM(DragItemType)
 
     enum ChannelType
     {
@@ -171,6 +174,7 @@ public:
 
     /** Get/Set the UI access mask */
     int defaultMask() const;
+    void setAccessMask(int mask);
     int accessMask() const;
 
     bool is3DSupported() const;
@@ -181,9 +185,6 @@ protected:
     Q_INVOKABLE void aboutQt();
 
     Q_INVOKABLE void exit(bool force = false);
-
-public slots:
-    void setAccessMask(int mask);
 
 protected:
     void keyPressEvent(QKeyEvent * e) override;
@@ -236,8 +237,17 @@ public:
     /** Return a reference to the Doc instance */
     Doc *doc();
 
+    /** Return the QML Virtual Console instance */
+    VirtualConsole *virtualConsole() const;
+
+    /** Return the QML Simple Desk instance */
+    SimpleDesk *simpleDesk() const;
+
     /** Return if the current Doc instance has been loaded */
     bool docLoaded();
+
+    /** Set the status of the doc loading state */
+    void setDocLoaded(bool loaded);
 
     /** Return the Doc instance modified flag */
     bool docModified() const;
@@ -348,6 +358,7 @@ signals:
 
 public slots:
     void slotLoadDocFromMemory(QByteArray &xmlData);
+    void slotSaveAutostart(QString fileName);
 
 private:
     QString m_fileName;

@@ -37,7 +37,7 @@
 #include "rgbmatrix.h"
 #include "function.h"
 #include "sequence.h"
-#include "script.h"
+#include "scriptwrapper.h"
 #include "chaser.h"
 #include "scene.h"
 #include "audio.h"
@@ -553,6 +553,7 @@ void FunctionManager::selectFunctionID(quint32 fID, bool multiSelection)
         m_selectedIDList.append(QVariant(fID));
 
     emit selectedFunctionCountChanged(m_selectedIDList.count());
+    emit itemClicked(App::FunctionDragItem);
 }
 
 QString FunctionManager::getEditorResource(int funcID)
@@ -604,6 +605,7 @@ void FunctionManager::setEditorFunction(quint32 fID, bool requestUI, bool back)
 
     if ((int)fID == -1)
     {
+        m_editorFunctionPath.clear();
         emit isEditingChanged(false);
 
         if (requestUI == true)
@@ -618,6 +620,7 @@ void FunctionManager::setEditorFunction(quint32 fID, bool requestUI, bool back)
     Function *f = m_doc->function(fID);
     if (f == nullptr)
         return;
+    m_editorFunctionPath = f->path(true).replace("/", TreeModel::separator());
 
     switch(f->type())
     {
@@ -697,6 +700,55 @@ void FunctionManager::setEditorFunction(quint32 fID, bool requestUI, bool back)
     }
 
     emit isEditingChanged(true);
+}
+
+static void collectExpandedPaths(TreeModel *model, const QString &parentPath, QStringList &paths)
+{
+    if (model == nullptr)
+        return;
+
+    const QChar sep = TreeModel::separator();
+    for (TreeModelItem *item : model->items())
+    {
+        if (item == nullptr)
+            continue;
+
+        QString itemPath = item->path();
+        if (itemPath.isEmpty())
+            itemPath = item->label();
+
+        QString fullPath = parentPath.isEmpty() ? itemPath : parentPath + sep + itemPath;
+
+        if ((item->flags() & TreeModel::Expanded) && !fullPath.isEmpty())
+            paths.append(fullPath);
+
+        if (item->hasChildren())
+            collectExpandedPaths(item->children(), fullPath, paths);
+    }
+}
+
+void FunctionManager::storeExpandedPaths()
+{
+    m_expandedPaths.clear();
+    collectExpandedPaths(m_functionTree, QString(), m_expandedPaths);
+
+    if (m_editorFunctionPath.isEmpty())
+        return;
+
+    QStringList tokens = m_editorFunctionPath.split(TreeModel::separator(), Qt::SkipEmptyParts);
+    QString acc;
+    for (const QString &token : tokens)
+    {
+        acc = acc.isEmpty() ? token : acc + TreeModel::separator() + token;
+        if (!m_expandedPaths.contains(acc))
+            m_expandedPaths.append(acc);
+    }
+}
+
+void FunctionManager::restoreExpandedPaths()
+{
+    for (const QString &path : m_expandedPaths)
+        m_functionTree->setItemRoleData(path, true, TreeModel::IsExpandedRole);
 }
 
 FunctionEditor *FunctionManager::currentEditor() const
@@ -967,6 +1019,7 @@ void FunctionManager::selectFolder(QString path, bool multiSelection)
 
     m_selectedFolderList.append(path);
     emit selectedFolderCountChanged(m_selectedFolderList.count());
+    emit itemClicked(App::FolderDragItem);
 }
 
 int FunctionManager::selectedFolderCount() const
@@ -1435,6 +1488,8 @@ void FunctionManager::updateFunctionsTree()
 {
     QStringList pathsList;
 
+    storeExpandedPaths();
+
     m_sceneCount = m_chaserCount = m_sequenceCount = m_efxCount = 0;
     m_collectionCount = m_rgbMatrixCount = m_scriptCount = 0;
     m_showCount = m_audioCount = m_videoCount = 0;
@@ -1472,6 +1527,8 @@ void FunctionManager::updateFunctionsTree()
         m_functionTree->addItem(fName, folderParams, basePath, TreeModel::EmptyNode | TreeModel::Expanded);
     }
 
+    restoreExpandedPaths();
+
     //m_functionTree->printTree(); // enable for debug purposes
 
     emit sceneCountChanged();
@@ -1502,5 +1559,3 @@ void FunctionManager::slotFunctionAdded(quint32 fid)
     Function *func = m_doc->function(fid);
     addFunctionTreeItem(func);
 }
-
-

@@ -360,10 +360,15 @@ Item
             updateGeometry()
         }
 
-        onClicked:
+        onClicked: (mouse) =>
         {
-            itemRoot.isSelected = !itemRoot.isSelected
-            showManager.setItemSelection(trackIndex, sfRef, itemRoot, itemRoot.isSelected)
+            var multi = ((mouse.modifiers & Qt.ControlModifier) || (mouse.modifiers & Qt.ShiftModifier))
+                    || (showManager && showManager.multipleSelection)
+            if (multi)
+                itemRoot.isSelected = !itemRoot.isSelected
+            else
+                itemRoot.isSelected = true
+            showManager.setItemSelection(trackIndex, sfRef, itemRoot, itemRoot.isSelected, mouse.modifiers)
         }
 
         onDoubleClicked: functionManager.setEditorFunction(sfRef.functionID, true, false)

@@ -40,17 +40,17 @@ public:
     void setBusLocation(quint8 location);
 
     /** @reimpl */
-    quint8 busLocation() override;
+    quint8 busLocation() const override;
 
     /************************************************************************
      * DMX/Serial Interface Methods
      ************************************************************************/
 public:
     /** @reimpl */
-    DMXInterface::Type type() override;
+    DMXInterface::Type type() const override;
 
     /** @reimpl */
-    QString typeString() override;
+    QString typeString() const override;
 
     /** @reimpl */
     bool open() override;
@@ -100,6 +100,7 @@ public:
 private:
     struct ftdi_context m_handle;
     quint8 m_busLocation;
+    enum ftdi_interface get_ftdi_interface();
 };
 
 #endif

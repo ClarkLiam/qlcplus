@@ -34,6 +34,7 @@
 #include <QPrinter>
 #include <QPainter>
 #include <QScreen>
+#include <QFileInfo>
 #include <unistd.h>
 
 #include "app.h"
@@ -73,6 +74,7 @@
 App::App()
     : QQuickView()
     , m_forceQuit(false)
+    , m_accessMask(defaultMask())
     , m_translator(nullptr)
     , m_fixtureBrowser(nullptr)
     , m_fixtureManager(nullptr)
@@ -97,8 +99,6 @@ App::App()
     QVariant dir = settings.value(SETTINGS_WORKINGPATH);
     if (dir.isValid())
         m_workingPath = dir.toString();
-
-    setAccessMask(defaultMask());
 
     connect(this, &App::screenChanged, this, &App::slotScreenChanged);
     connect(this, SIGNAL(closing(QQuickCloseEvent*)), this, SLOT(slotClosing()));
@@ -165,6 +165,8 @@ void App::startup()
 
     m_virtualConsole = new VirtualConsole(this, m_doc, m_contextManager);
     m_showManager = new ShowManager(this, m_doc);
+    connect(m_showManager, &ShowManager::itemClicked, m_contextManager, &ContextManager::setLastClickedType);
+
     m_networkManager = new NetworkManager(this, m_doc);
     rootContext()->setContextProperty("networkManager", m_networkManager);
 
@@ -279,7 +281,6 @@ int App::accessMask() const
 
 bool App::is3DSupported() const
 {
-    // TODO: Qt6
     return true;
 }
 
@@ -398,9 +399,28 @@ Doc *App::doc()
     return m_doc;
 }
 
+VirtualConsole *App::virtualConsole() const
+{
+    return m_virtualConsole;
+}
+
+SimpleDesk *App::simpleDesk() const
+{
+    return m_simpleDesk;
+}
+
 bool App::docLoaded()
 {
     return m_docLoaded;
+}
+
+void App::setDocLoaded(bool loaded)
+{
+    if (m_docLoaded == loaded)
+        return;
+
+    m_docLoaded = loaded;
+    emit docLoadedChanged();
 }
 
 bool App::docModified() const
@@ -671,8 +691,7 @@ bool App::loadWorkspace(const QString &fileName)
 
     /* Clear existing document data */
     clearDocument();
-    m_docLoaded = false;
-    emit docLoadedChanged();
+    setDocLoaded(false);
 
     QString localFilename =  fileName;
     if (localFilename.startsWith("file:"))
@@ -682,9 +701,8 @@ bool App::loadWorkspace(const QString &fileName)
     {
         setTitle(QString("%1 - %2").arg(APPNAME).arg(localFilename));
         setFileName(localFilename);
-        m_docLoaded = true;
         updateRecentFilesList(localFilename);
-        emit docLoadedChanged();
+        setDocLoaded(true);
         m_doc->resetModified();
         m_videoProvider = new VideoProvider(this, m_doc);
         m_contextManager->resetContexts();
@@ -719,6 +737,7 @@ void App::slotLoadDocFromMemory(QByteArray &xmlData)
 
     /* Clear existing document data */
     clearDocument();
+    setDocLoaded(false);
 
     QBuffer databuf;
     databuf.setData(xmlData);
@@ -745,9 +764,21 @@ void App::slotLoadDocFromMemory(QByteArray &xmlData)
     }
 
     if (doc.dtdName() == KXMLQLCWorkspace)
+    {
         loadXML(doc, true, true);
+        setDocLoaded(true);
+        m_doc->resetModified();
+    }
     else
         qDebug() << "XML doesn't have a Workspace tag";
+}
+
+void App::slotSaveAutostart(QString fileName)
+{
+    m_doc->setWorkspacePath(QFileInfo(fileName).absolutePath());
+    QFile::FileError error = saveXML(fileName);
+    if (error != QFile::NoError)
+        qWarning() << Q_FUNC_INFO << "Unable to save autostart project" << fileName << error;
 }
 
 bool App::saveWorkspace(const QString &fileName)

@@ -38,6 +38,7 @@ class VCSlider : public VCWidget, public DMXSource
     Q_PROPERTY(ValueDisplayStyle valueDisplayStyle READ valueDisplayStyle WRITE setValueDisplayStyle NOTIFY valueDisplayStyleChanged)
     Q_PROPERTY(bool invertedAppearance READ invertedAppearance WRITE setInvertedAppearance NOTIFY invertedAppearanceChanged)
     Q_PROPERTY(SliderMode sliderMode READ sliderMode WRITE setSliderMode NOTIFY sliderModeChanged)
+    Q_PROPERTY(bool catchValues READ catchValues WRITE setCatchValues NOTIFY catchValuesChanged)
 
     Q_PROPERTY(int value READ value WRITE setValue NOTIFY valueChanged)
     Q_PROPERTY(qreal rangeLowLimit READ rangeLowLimit WRITE setRangeLowLimit NOTIFY rangeLowLimitChanged)
@@ -77,7 +78,7 @@ public:
     virtual ~VCSlider();
 
     /** @reimp */
-    QString defaultCaption() override;
+    QString defaultCaption() const override;
 
     /** @reimp */
     void setupLookAndFeel(qreal pixelDensity, int page) override;
@@ -89,7 +90,7 @@ public:
     QString propertiesResource() const override;
 
     /** @reimp */
-    VCWidget *createCopy(VCWidget *parent) override;
+    VCWidget *createCopy(VCWidget *parent) const override;
 
 protected:
     /** @reimp */
@@ -107,8 +108,8 @@ public:
     Q_ENUM(SliderWidgetStyle)
 
     /** Helper methods for SliderWidgetStyle <--> QString conversion */
-    QString widgetStyleToString(SliderWidgetStyle style);
-    SliderWidgetStyle stringToWidgetStyle(QString style);
+    QString widgetStyleToString(SliderWidgetStyle style) const;
+    SliderWidgetStyle stringToWidgetStyle(QString style) const;
 
     /** Get/Set the Slider value display style */
     SliderWidgetStyle widgetStyle() const;
@@ -146,10 +147,12 @@ public:
 signals:
     void valueDisplayStyleChanged(ValueDisplayStyle valueDisplayStyle);
     void invertedAppearanceChanged(bool inverted);
+    void catchValuesChanged(bool enable);
 
 protected:
     ValueDisplayStyle m_valueDisplayStyle;
     bool m_invertedAppearance;
+    bool m_catchValues;
 
     /*********************************************************************
      * Slider Mode
@@ -180,6 +183,10 @@ public:
     int value() const;
     void setValue(int value, bool setDMX = true, bool updateFeedback = true);
 
+    /** Get/Set the external input values catching */
+    bool catchValues() const;
+    void setCatchValues(bool enable);
+
     /** Set/Get the lower limit for the slider values */
     void setRangeLowLimit(qreal value);
     qreal rangeLowLimit() const;
@@ -202,6 +209,7 @@ protected:
     int m_value;
     qreal m_rangeLowLimit;
     qreal m_rangeHighLimit;
+    int m_lastInputValue;
 
     /*********************************************************************
      * Level mode
@@ -458,7 +466,7 @@ public:
     bool loadXMLLegacyPlayback(QXmlStreamReader &pb_root);
 
     /** @reimp */
-    bool saveXML(QXmlStreamWriter *doc) override;
+    bool saveXML(QXmlStreamWriter *doc) const override;
 };
 
 #endif

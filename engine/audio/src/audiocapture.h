@@ -60,14 +60,14 @@ class AudioCapture : public QThread
     Q_OBJECT
 public:
     /*!
-     * Object contsructor.
+     * Object constructor.
      * @param parent Parent object.
      */
     AudioCapture(QObject* parent = 0);
 
     ~AudioCapture();
 
-    int defaultBarsNumber();
+    int defaultBarsNumber() const;
 
     /**
      * Request the given number of frequency bands to the
@@ -79,7 +79,6 @@ public:
      * Cancel a previous request of bars
      */
     void unregisterBandsNumber(int number);
-    //int bandsNumber();
 
     static int maxFrequency() { return SPECTRUM_MAX_FREQUENCY; }
 
@@ -114,7 +113,7 @@ protected:
     /*!
      * Returns input interface latency in milliseconds.
      */
-    virtual qint64 latency() = 0;
+    virtual qint64 latency() const = 0;
 
     /*********************************************************************
      * Thread functions
